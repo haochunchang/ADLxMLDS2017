@@ -2,12 +2,12 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train_rnn(xtrain, ytrain, batch_size=128, epochs=100):
+def train(xtrain, ytrain, batch_size=128, epochs=100):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
-    from keras.layers import GRU, SimpleRNN
+    from keras.layers import LSTM, GRU, TimeDistributed
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -32,16 +32,18 @@ def train_rnn(xtrain, ytrain, batch_size=128, epochs=100):
  
     # Define RNN model
     rnn = Sequential()
-    #rnn.add(Input)
-    rnn.add(GRU(128, input_shape=(1, x_train.shape[2]), return_sequences=True, dropout=0.2))
+    rnn.add(LSTM(128, input_shape=(1, x_train.shape[2]), return_sequences=True))
+    rnn.add(LSTM(128, return_sequences=True))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(Flatten())
-    rnn.add(Dense(64,activation='relu'))
-    rnn.add(Dropout(0.2))
     rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
     rnn.compile(loss='categorical_crossentropy',
-                optimizer='adam')
+                optimizer='adam',
+                metrics=['accuracy'])
     print(rnn.summary())
  
     # Save model definition  
@@ -53,14 +55,14 @@ def train_rnn(xtrain, ytrain, batch_size=128, epochs=100):
  
     # Checkpoints
     checkpointer = ModelCheckpoint(filepath="./models/rnn.h5", 
-                    verbose=1, save_best_only=True, monitor='val_loss', mode='min')  
-    earlystopping = EarlyStopping(monitor='val_loss', patience = 10, verbose=1, mode='min')
+                    verbose=1, save_best_only=True, monitor='val_acc', mode='max')  
+    earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
  
     # Train model
     rnn.fit(x_train, y_train, batch_size=batch_size,
             verbose=1, epochs=epochs, validation_data=(x_val, y_val),
             callbacks=[earlystopping, checkpointer])
-
+    return rnn
 
 def load_pretrained(path=os.path.join('.', 'models')):
 

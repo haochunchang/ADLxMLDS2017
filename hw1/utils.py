@@ -58,4 +58,5 @@ def combine_phone_seq(res):
 
 if __name__ == "__main__":
     path = os.path.join('./data')
-    trim('', path)
+    test_result = pd.read_csv('test_result.csv')
+    trim(test_result, path)
