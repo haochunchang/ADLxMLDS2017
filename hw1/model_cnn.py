@@ -20,9 +20,10 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='cnn'):
     merged = xtrain.merge(ytrain, how='left')
     
     steps = 30
-    frames = np.array([i for i in merged['feature'].values])
-    frames = np.append(np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), frames, axis=0)
-    x_train = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
+    x_train = np.load('./data/fbank_step{}.npy'.format(steps))
+    #frames = np.array([i for i in merged['feature'].values])
+    #frames = np.append(np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), frames, axis=0)
+    #x_train = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
  
     y_train = merged['label'].values
     lb = LabelBinarizer()

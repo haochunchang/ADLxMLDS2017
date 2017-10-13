@@ -114,7 +114,7 @@ def primary_test(model, x_test, model_name=''):
     x_test = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
    
     y_pred = model.predict(x_test, batch_size=128, verbose=1)
-    return y_pred
+    return y_pred, idx
 
 if __name__ == "__main__":
     pass

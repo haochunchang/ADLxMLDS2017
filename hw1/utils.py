@@ -56,6 +56,28 @@ def combine_phone_seq(res):
     new_result = res.groupby(new_idx).apply(lambda x: x['pred'].str.cat(sep=','))
     return new_result
 
+def get_sequence(merged, steps):
+    '''
+    Preprocess features, avoiding cross-sentences steps
+    For each sentence start, pad with zeros, not previous sentence
+
+    merged: DataFrame with id, labels and features
+    steps: timesteps considered
+    Return: (n_samples, steps, n_features) 
+    ''' 
+    merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']]) 
+    merged = merged.drop(['id', 'label'], axis=1)
+
+    padding = np.array([[0 for i in range(len(merged['feature'].values[0]))] for j in range(steps)])
+    x_train = np.empty([1, steps, len(merged['feature'].values[0])])
+    print('Initialize empty x_train: {}'.format(x_train.shape))
+    for person, new_df in merged.groupby(level=0):
+        for sentence, fea in new_df.groupby(level=1):
+            frames = np.append(padding, np.array([i for i in fea['feature'].values]), axis=0)
+            x_train = np.append(x_train, np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)]), axis=0)
+    x_train = np.delete(x_train, 0, axis=0)
+    return x_train
+
 if __name__ == "__main__":
     path = os.path.join('./data')
     test_result = pd.read_csv('test_result.csv')

@@ -1,5 +1,5 @@
 import utils
-import os, sys
+import os, sys, pickle
 import pandas as pd
 import argparse
 
@@ -20,21 +20,22 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
             train_m = utils.load_data(os.path.join(datadir, 'mfcc'))
             clf_f = md.train(train_f, y_train, model_name='{}_f'.format(model))
             clf_m = md.train(train_m, y_train, model_name='{}_m'.format(model))
+            return
         else:
             clf_f = md.load_pretrained(model_name='{}_f'.format(model))
             clf_m = md.load_pretrained(model_name='{}_m'.format(model))
         # Testing
         x_test_f = utils.load_data(os.path.join(datadir, 'fbank'), flag='test')
         x_test_m = utils.load_data(os.path.join(datadir, 'mfcc'), flag='test')
-        result_f = md.primary_test(clf_f, x_test_f, model_name='{}_f'.format(model))
-        result_m = md.primary_test(clf_m, x_test_m, model_name='{}_m'.format(model))
+        result_f, idx_f = md.primary_test(clf_f, x_test_f, model_name='{}_f'.format(model))
+        result_m, idx_m = md.primary_test(clf_m, x_test_m, model_name='{}_m'.format(model))
         y_pred = (result_f + result_m) / 2
         with open('{}_flabel_map.pkl'.format(model), 'rb') as lm:
             label_map = pickle.load(lm)
     
         pred = label_map.inverse_transform(y_pred, 0.5)
         result = pd.DataFrame()
-        result['id'] = idx
+        result['id'] = idx_f
         result['pred'] = pred
 
     # using only one of either features
