@@ -10,27 +10,43 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
     elif model == 'cnn':
         import model_cnn as md 
 
-    # Train RNN model
-    if flag == 'train':
-        # Load in training data
-        if feature == 'both':
+    # Load in training data
+    y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'), 
+                              header=None, names=['id', 'label'])
+    # Use both kinds of features, averaging their model predictions
+    if feature == 'both':          
+        if flag == 'train':
             train_f = utils.load_data(os.path.join(datadir, 'fbank'))
             train_m = utils.load_data(os.path.join(datadir, 'mfcc'))
-            x_train = pd.concat([train_f, train_m], axis=1)
+            clf_f = md.train(train_f, y_train, model_name='{}_f'.format(model))
+            clf_m = md.train(train_m, y_train, model_name='{}_m'.format(model))
         else:
-            x_train = utils.load_data(os.path.join(datadir, '{}'.format(feature)))
-        y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'), 
-                                header=None, names=['id', 'label'])
-        clf = md.train(x_train, y_train)
+            clf_f = md.load_pretrained(model_name='{}_f'.format(model))
+            clf_m = md.load_pretrained(model_name='{}_m'.format(model))
+        # Testing
+        x_test_f = utils.load_data(os.path.join(datadir, 'fbank'), flag='test')
+        x_test_m = utils.load_data(os.path.join(datadir, 'mfcc'), flag='test')
+        result_f = md.primary_test(clf_f, x_test_f, model_name='{}_f'.format(model))
+        result_m = md.primary_test(clf_m, x_test_m, model_name='{}_m'.format(model))
+        y_pred = (result_f + result_m) / 2
+        with open('{}_flabel_map.pkl'.format(model), 'rb') as lm:
+            label_map = pickle.load(lm)
+    
+        pred = label_map.inverse_transform(y_pred, 0.5)
+        result = pd.DataFrame()
+        result['id'] = idx
+        result['pred'] = pred
 
+    # using only one of either features
     else:
-        clf = md.load_pretrained()
-
-    # Load in testing data
-    x_test = utils.load_data(os.path.join(datadir, '{}'.format(feature)), flag='test')
-
-    # Test RNN model
-    result = clf.test(model, x_test)
+        if flag == 'train':
+            x_train = utils.load_data(os.path.join(datadir, '{}'.format(feature)))
+            clf = md.train(x_train, y_train, model_name=model)
+        else:
+            clf = md.load_pretrained(model_name=model)
+        # Testing
+        x_test = utils.load_data(os.path.join(datadir, '{}'.format(feature)), flag='test')
+        result = md.test(clf, x_test, model_name=model)
    
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)
