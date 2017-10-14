@@ -69,19 +69,19 @@ def get_sequence(merged, steps, feature):
     merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']]) 
     merged = merged.drop(['id', 'label'], axis=1)
 
-    padding = np.zeros((steps // 2, len(merged['feature'].values[0])))
+    padding = np.zeros((steps // 2, len(merged['feature'].values[0])))    
+    x_train = np.empty((1, steps, len(merged['feature'].values[0])))
     i = 0
     for person, new_df in merged.groupby(level=0):
-        x_train = np.empty((1, steps, len(merged['feature'].values[0])))
         for sentence, fea in new_df.groupby(level=1):
             frames = np.append(padding, np.array([i for i in fea['feature'].values]), axis=0)
             frames = np.append(frames, padding, axis=0)
             x_train = np.append(x_train, np.array([frames[i-steps//2:i+steps//2, :] 
                                                    for i in range(steps//2, frames.shape[0]-steps//2)]), axis=0)
-        x_train = np.delete(x_train, (0), axis=0)
         print(i, x_train.shape)
-        np.save('./data/{}/{}_steps{}_{}'.format(feature, feature, steps, i), x_train)
-        i += 1
+        i += 1    
+    x_train = np.delete(x_train, (0), axis=0)
+    np.save('./data/{}/{}_all_steps{}'.format(feature, feature, steps), x_train)
 
 def combine_data(feature, steps):
     paths = glob.glob(os.path.join('data', feature, '{}_steps{}*'.format(feature, steps)))
