@@ -16,12 +16,14 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
     
-    steps = 30
-    frames = np.array([i for i in merged['feature'].values])
-    frames = np.append(np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), frames, axis=0)
-    x_train = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
+    #steps = 30
+    #frames = np.array([i for i in merged['feature'].values])
+    #frames = np.append(np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), frames, axis=0)
+    #x_train = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
+    
     y_train = merged['label'].values
- 
+    steps = 6
+    x_train = np.load('./data/fbank/fbank_all_steps{}.npy'.format(steps))
     # Save labelBinarizer
     if model_name.split('_')[-1] == 'm':
         with open('{}_flabel_map.pkl'.format(model_name.split('_')[0]), 'rb') as f:
@@ -86,11 +88,14 @@ def load_pretrained(path=os.path.join('.', 'models'), model_name='rnn'):
 def test(model, x_test, model_name=''):
     
     idx = x_test['id']
-    steps = 30
+    steps = 6
     frames = np.array([i for i in x_test['feature'].values])
     # Pad zero
-    frames = np.append(frames, np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), axis=0)
-    x_test = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
+    padding = np.zeros((steps // 2, len(x_test['feature'].values[0])))    
+ 
+    frames = np.append(frames, padding, axis=0)
+    frames = np.append(padding, frames, axis=0)
+    x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
    
     y_pred = model.predict(x_test, batch_size=128, verbose=1)
 

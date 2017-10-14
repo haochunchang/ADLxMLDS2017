@@ -19,12 +19,8 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='cnn'):
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
     
-    steps = 30
-    x_train = np.load('./data/fbank_step{}.npy'.format(steps))
-    #frames = np.array([i for i in merged['feature'].values])
-    #frames = np.append(np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), frames, axis=0)
-    #x_train = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
- 
+    steps = 6
+    x_train = np.load('./data/fbank/fbank_all_steps{}.npy'.format(steps))
     y_train = merged['label'].values
     lb = LabelBinarizer()
     y_train = lb.fit_transform(y_train)
@@ -72,9 +68,9 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='cnn'):
     earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
  
     # Train model
-    #rnn.fit(x_train, y_train, batch_size=batch_size,
-    #        verbose=1, epochs=epochs, validation_data=(x_val, y_val),
-    #        callbacks=[earlystopping, checkpointer])
+    rnn.fit(x_train, y_train, batch_size=batch_size,
+            verbose=1, epochs=epochs, validation_data=(x_val, y_val),
+            callbacks=[earlystopping, checkpointer])
     return rnn
 
 def load_pretrained(path=os.path.join('.', 'models'), model_name='cnn'):
@@ -90,11 +86,12 @@ def load_pretrained(path=os.path.join('.', 'models'), model_name='cnn'):
 def test(model, x_test, model_name='cnn'):
     
     idx = x_test['id']
-    steps = 30
+    steps = 6
     frames = np.array([i for i in x_test['feature'].values])
     # Pad zero
-    frames = np.append(frames, np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), axis=0)
-    x_test = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
+    frames = np.append(np.zeros((steps//2, len(x_test['feature'].values[0]))), frames, axis=0)
+    frames = np.append(frames, np.zeros((steps//2, len(x_test['feature'].values[0]))), axis=0)
+    x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(frames.shape[0]-steps//2)])
  
     y_pred = model.predict(x_test, batch_size=128, verbose=1)
 
