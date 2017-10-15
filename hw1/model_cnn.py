@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='cnn'):
+def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='cnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
@@ -36,17 +36,14 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='cnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(128, kernel_size=3, input_shape=(steps, x_train.shape[2])))
+    rnn.add(Conv1D(256, kernel_size=3, input_shape=(steps, x_train.shape[2])))
     rnn.add(MaxPooling1D())
-    rnn.add(Conv1D(64, kernel_size=2))
+    rnn.add(Conv1D(128, kernel_size=2))
     rnn.add(Permute((1, 2)))
     rnn.add(LSTM(128, return_sequences=True, dropout=0.2))
-    rnn.add(LSTM(128, return_sequences=True, dropout=0.2))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(Flatten())
+    rnn.add(LSTM(128, dropout=0.2))
+    rnn.add(Dense(256, activation='relu'))
+    rnn.add(Dropout(0.2))
     rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
@@ -87,13 +84,9 @@ def test(model, x_test, model_name='cnn'):
     
     idx = x_test['id']
     steps = 6
-    frames = np.array([i for i in x_test['feature'].values])
-    # Pad zero
-    frames = np.append(np.zeros((steps//2, len(x_test['feature'].values[0]))), frames, axis=0)
-    frames = np.append(frames, np.zeros((steps//2, len(x_test['feature'].values[0]))), axis=0)
-    x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(frames.shape[0]-steps//2)])
- 
-    y_pred = model.predict(x_test, batch_size=128, verbose=1)
+
+    x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
+    y_pred = model.predict(x_test, batch_size=256, verbose=1)
 
     with open('{}label_map.pkl'.format(model_name), 'rb') as lm:
         label_map = pickle.load(lm)
