@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
+def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
@@ -23,14 +23,15 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
     
     y_train = merged['label'].values
     steps = 6
-    x_train = np.load('./data/fbank/fbank_all_steps{}.npy'.format(steps))
     # Save labelBinarizer
     if model_name.split('_')[-1] == 'm':
+        x_train = np.load('./data/mfcc/mfcc_all_steps{}.npy'.format(steps))
         with open('{}_flabel_map.pkl'.format(model_name.split('_')[0]), 'rb') as f:
             lb = pickle.load(f)
         y_train = lb.fit_transform(y_train)
  
     else:
+        x_train = np.load('./data/fbank/fbank_all_steps{}.npy'.format(steps))
         lb = LabelBinarizer()
         y_train = lb.fit_transform(y_train)
  
@@ -44,11 +45,17 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(LSTM(128, input_shape=(steps, x_train.shape[2]), return_sequences=True))
+    rnn.add(GRU(128, input_shape=(steps, x_train.shape[2]), return_sequences=True))
+    rnn.add(GRU(128, return_sequences=True, dropout=0.2))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(Flatten())
+    rnn.add(Dense(128, activation='relu'))
+    rnn.add(Dropout(0.2))
     rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
@@ -90,8 +97,11 @@ def test(model, x_test, model_name=''):
     idx = x_test['id']
     steps = 6
 
-    x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
-    y_pred = model.predict(x_test, batch_size=128, verbose=1)
+    if moedel_name.split('_')[-1] == m:
+        x_test = np.load('data/mfcc/mfcc_test_all_steps{}.npy'.format(steps))  
+    else:
+        x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
+    y_pred = model.predict(x_test, batch_size=256, verbose=1)
 
     with open('{}label_map.pkl'.format(model_name), 'rb') as lm:
         label_map = pickle.load(lm)

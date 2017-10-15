@@ -48,7 +48,8 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
         # Testing
         x_test = utils.load_data(os.path.join(datadir, '{}'.format(feature)), flag='test')
         result = md.test(clf, x_test, model_name=model)
-   
+
+    result.to_csv('prime_result.csv')   
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)
     result = utils.trim(result, datadir)
