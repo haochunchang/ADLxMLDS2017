@@ -89,14 +89,8 @@ def test(model, x_test, model_name=''):
     
     idx = x_test['id']
     steps = 6
-    frames = np.array([i for i in x_test['feature'].values])
-    # Pad zero
-    padding = np.zeros((steps // 2, len(x_test['feature'].values[0])))    
- 
-    frames = np.append(frames, padding, axis=0)
-    frames = np.append(padding, frames, axis=0)
-    x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
-   
+
+    x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
     y_pred = model.predict(x_test, batch_size=128, verbose=1)
 
     with open('{}label_map.pkl'.format(model_name), 'rb') as lm:

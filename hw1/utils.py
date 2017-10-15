@@ -83,22 +83,23 @@ def get_sequence(merged, steps, feature):
     x_train = np.delete(x_train, (0), axis=0)
     np.save('./data/{}/{}_all_steps{}'.format(feature, feature, steps), x_train)
 
-def combine_data(feature, steps):
-    paths = glob.glob(os.path.join('data', feature, '{}_steps{}*'.format(feature, steps)))
-    if feature == 'fbank':
-        x_train = np.empty((1, steps, 69))
-    else:
-        x_train = np.empty((1, steps, 39))
+def get_test_sequence(test, steps, feature):
 
-    for i in range(462):
-        path = os.path.join('data', feature, '{}_steps{}_{}.npy'.format(feature, steps, i))
-        tmp = np.load(path)
-        print('{} loaded'.format(path))
-        x_train = np.append(x_train, tmp, axis=0)
-    x_train = np.delete(x_train, (0), axis=0)     
-    print(x_train.shape)
-    np.save('{}_all_steps{}'.format(feature, steps), x_train)
+    test.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in test['id']]) 
+
+    padding = np.zeros((steps // 2, len(test['feature'].values[0])))    
+    x_test = np.empty((1, steps, len(test['feature'].values[0])))
+    i = 0
+    for person, new_df in test.groupby(level=0):
+        for sentence, fea in new_df.groupby(level=1):
+            frames = np.append(padding, np.array([i for i in fea['feature'].values]), axis=0)
+            frames = np.append(frames, padding, axis=0)
+            x_test = np.append(x_test, np.array([frames[i-steps//2:i+steps//2, :] 
+                                                   for i in range(steps//2, frames.shape[0]-steps//2)]), axis=0)
+        print(i, x_test.shape)
+        i += 1    
+    x_test = np.delete(x_test, (0), axis=0)
+    np.save('./data/{}/{}_test_all_steps{}'.format(feature, feature, steps), x_test)
 
 if __name__ == "__main__":
-    combine_data('fbank', 20)
-    combine_data('mfcc', 20)
+    pass
