@@ -15,25 +15,37 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
 
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
-    
-    #steps = 30
     #frames = np.array([i for i in merged['feature'].values])
-    #frames = np.append(np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), frames, axis=0)
-    #x_train = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
-    
+
+    steps = 10
+    #padding = np.zeros((steps//2, len(merged['feature'].values[0])))
+    #frames = np.append(frames, padding, axis=0)
+    #frames = np.append(padding, frames, axis=0)
+    #x_train = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
+    new_label = []
     y_train = merged['label'].values
-    steps = 6
+    
     # Save labelBinarizer
     if model_name.split('_')[-1] == 'm':
-        x_train = np.load('./data/mfcc/mfcc_all_steps{}.npy'.format(steps))
+        x_train = np.load('./data/mfcc/sents.npy')
         with open('{}_flabel_map.pkl'.format(model_name.split('_')[0]), 'rb') as f:
             lb = pickle.load(f)
-        y_train = lb.fit_transform(y_train)
+        for label in labels:
+            tmp = lb.transform(label.flatten())
+            new_label.append(tmp)
+
+        y_train = np.array(new_label)
  
     else:
-        x_train = np.load('./data/fbank/fbank_all_steps{}.npy'.format(steps))
+        x_train = np.load('./data/fbank/sents.npy')
         lb = LabelBinarizer()
-        y_train = lb.fit_transform(y_train)
+        lb.fit(merged['label'].values)
+
+        for label in labels:
+            tmp = lb.transform(label.flatten())
+            new_label.append(tmp)
+
+        y_train = np.array(new_label)
  
         with open('{}label_map.pkl'.format(model_name), 'wb') as f:
             pickle.dump(lb, f)
@@ -46,17 +58,15 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
     # Define RNN model
     rnn = Sequential()
     rnn.add(GRU(128, input_shape=(steps, x_train.shape[2]), return_sequences=True))
-    rnn.add(GRU(128, return_sequences=True, dropout=0.2))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(Flatten())
-    rnn.add(Dense(128, activation='relu'))
-    rnn.add(Dropout(0.2))
-    rnn.add(Dense(y_train.shape[1], activation='softmax'))
+    #rnn.add(GRU(128, dropout=0.2))
+    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    #rnn.add(Flatten())
+    #rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
     rnn.compile(loss='categorical_crossentropy',
@@ -116,12 +126,14 @@ def test(model, x_test, model_name=''):
 def primary_test(model, x_test, model_name=''):
     
     idx = x_test['id']
-    steps = 30
-    frames = np.array([i for i in x_test['feature'].values])
+    steps = 6
+    #frames = np.array([i for i in x_test['feature'].values])
     # Pad zero
-    frames = np.append(frames, np.array([[0 for i in range(frames.shape[1])] for j in range(steps)]), axis=0)
-    x_test = np.array([frames[i:i+steps, :] for i in range(frames.shape[0]-steps)])
-   
+    #padding = np.zeros((steps//2, len(x_test['feature'].values[0])))
+    #frames = np.append(frames, padding, axis=0)
+    #frames = np.append(padding, frames, axis=0)
+    #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
+    x_train = np.load('./data/{}/test_sents.npy'.format(model_name))
     y_pred = model.predict(x_test, batch_size=128, verbose=1)
     return y_pred, idx
 
