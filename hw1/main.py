@@ -11,8 +11,9 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
         import model_cnn as md 
 
     # Load in training data
-    y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'), 
-                              header=None, names=['id', 'label'])
+    y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'),
+                             header=None, names=['id', 'label'])
+
     # Use both kinds of features, averaging their model predictions
     if feature == 'both':          
         if flag == 'train':
