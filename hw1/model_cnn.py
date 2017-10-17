@@ -2,32 +2,55 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='cnn'):
+def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
-    from keras.layers import Dense, Dropout, Input, Reshape, Flatten
+    from keras.layers import Dense, Dropout, Input, Flatten
     from keras.layers import LSTM, GRU, TimeDistributed
     from keras.layers import Conv1D, MaxPooling1D, Permute
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
-    from keras import backend as K
-    K.set_image_dim_ordering('tf')
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import LabelBinarizer    
 
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
-    
-    steps = 6
-    x_train = np.load('./data/fbank/fbank_all_steps{}.npy'.format(steps))
+    #frames = np.array([i for i in merged['feature'].values])
+
+    #padding = np.zeros((steps//2, len(merged['feature'].values[0])))
+    #frames = np.append(frames, padding, axis=0)
+    #frames = np.append(padding, frames, axis=0)
+    #x_train = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
+    new_label = []
     y_train = merged['label'].values
-    lb = LabelBinarizer()
-    y_train = lb.fit_transform(y_train)
-  
+    
     # Save labelBinarizer
-    with open('{}label_map.pkl'.format(model_name), 'wb') as f:
-        pickle.dump(lb, f)
+    if model_name.split('_')[-1] == 'm':
+        x_train = np.load('./data/mfcc/sents.npy')
+        labels = np.load('./data/mfcc/sents_labels.npy')
+        with open('{}_flabel_map.pkl'.format(model_name.split('_')[0]), 'rb') as f:
+            lb = pickle.load(f)
+        for label in labels:
+            tmp = lb.transform(label.flatten())
+            new_label.append(tmp)
+
+        y_train = np.array(new_label)
+ 
+    else:
+        x_train = np.load('./data/fbank/sents.npy')
+        labels = np.load('./data/fbank/sents_labels.npy')
+        lb = LabelBinarizer()
+        lb.fit(merged['label'].values)
+
+        for label in labels:
+            tmp = lb.transform(label.flatten())
+            new_label.append(tmp)
+
+        y_train = np.array(new_label)
+ 
+        with open('{}label_map.pkl'.format(model_name), 'wb') as f:
+            pickle.dump(lb, f)
 
     print(x_train.shape, y_train.shape)
 
@@ -36,15 +59,20 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='cnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(256, kernel_size=3, input_shape=(steps, x_train.shape[2])))
+    rnn.add(Conv1D(256, kernel_size=3, input_shape=(None, x_train.shape[2])))
     rnn.add(MaxPooling1D())
     rnn.add(Conv1D(128, kernel_size=2))
     rnn.add(Permute((1, 2)))
-    rnn.add(LSTM(128, return_sequences=True, dropout=0.2))
-    rnn.add(LSTM(128, dropout=0.2))
-    rnn.add(Dense(256, activation='relu'))
-    rnn.add(Dropout(0.2))
-    rnn.add(Dense(y_train.shape[1], activation='softmax'))
+    rnn.add(GRU(128, input_shape=(None, x_train.shape[2]), return_sequences=True))
+    #rnn.add(GRU(128, dropout=0.2))
+    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    #rnn.add(Flatten())
+    #rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
     rnn.compile(loss='categorical_crossentropy',
@@ -70,7 +98,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='cnn'):
             callbacks=[earlystopping, checkpointer])
     return rnn
 
-def load_pretrained(path=os.path.join('.', 'models'), model_name='cnn'):
+def load_pretrained(path=os.path.join('.', 'models'), model_name='rnn'):
 
     from keras.models import model_from_json
 
@@ -80,12 +108,15 @@ def load_pretrained(path=os.path.join('.', 'models'), model_name='cnn'):
 
     return model
 
-def test(model, x_test, model_name='cnn'):
+def test(model, x_test, model_name=''):
     
     idx = x_test['id']
     steps = 6
 
-    x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
+    if moedel_name.split('_')[-1] == 'm':
+        x_test = np.load('data/mfcc/mfcc_test_all_steps{}.npy'.format(steps))  
+    else:
+        x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
     y_pred = model.predict(x_test, batch_size=256, verbose=1)
 
     with open('{}label_map.pkl'.format(model_name), 'rb') as lm:
@@ -97,6 +128,34 @@ def test(model, x_test, model_name='cnn'):
     result['pred'] = pred
 
     return result
+
+def primary_test(model, x_test, model_name=''):
+    
+    if model_name.split('_')[-1] == 'f':
+        feature = 'fbank'
+    else:
+        feature = 'mfcc'
+
+    # Pad frames id to match with padded prediction
+    idx = x_test['id']
+    idx.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in idx])
+    new_idx = []
+    for person, new_df in idx.groupby(level=0):
+        for sentence, fea_id in new_df.groupby(level=1):
+            fea = list(fea_id)
+            fea += [person+'_'+sentence+'_'+str(i) for i in range(len(fea)+1, 778)]
+            new_idx += fea
+    
+    idx = pd.Series(new_idx)
+    #frames = np.array([i for i in x_test['feature'].values])
+    # Pad zero
+    #padding = np.zeros((steps//2, len(x_test['feature'].values[0])))
+    #frames = np.append(frames, padding, axis=0)
+    #frames = np.append(padding, frames, axis=0)
+    #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
+    x_test = np.load('./data/{}/test_sents.npy'.format(feature))
+    y_pred = model.predict(x_test, batch_size=256, verbose=1)
+    return y_pred, idx
 
 if __name__ == "__main__":
     pass
