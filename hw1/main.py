@@ -32,7 +32,7 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
         result_f, idx_f = md.primary_test(clf_f, x_test_f, model_name='{}_f'.format(model))
         result_m, idx_m = md.primary_test(clf_m, x_test_m, model_name='{}_m'.format(model))
         y_pred = (result_f + result_m) / 2
-
+        print(y_pred.shape, idx_f.shape)
         with open('{}_flabel_map.pkl'.format(model), 'rb') as lm:
             label_map = pickle.load(lm)
 

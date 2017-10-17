@@ -132,8 +132,17 @@ def primary_test(model, x_test, model_name=''):
     else:
         feature = 'mfcc'
 
+    # Pad frames id to match with padded prediction
     idx = x_test['id']
-    steps = 6
+    idx.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in idx])
+    new_idx = []
+    for person, new_df in idx.groupby(level=0):
+        for sentence, fea_id in new_df.groupby(level=1):
+            fea = list(fea_id)
+            fea += [person+'_'+sentence+'_'+str(i) for i in range(len(fea)+1, 778)]
+            new_idx += fea
+    
+    idx = pd.Series(new_idx)
     #frames = np.array([i for i in x_test['feature'].values])
     # Pad zero
     #padding = np.zeros((steps//2, len(x_test['feature'].values[0])))
@@ -141,7 +150,6 @@ def primary_test(model, x_test, model_name=''):
     #frames = np.append(padding, frames, axis=0)
     #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
     x_test = np.load('./data/{}/test_sents.npy'.format(feature))
-    print(x_test.shape)
     y_pred = model.predict(x_test, batch_size=256, verbose=1)
     return y_pred, idx
 
