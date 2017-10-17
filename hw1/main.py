@@ -1,6 +1,7 @@
 import utils
 import os, sys, pickle
 import pandas as pd
+import numpy as np
 import argparse
 
 def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
@@ -31,14 +32,21 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
         result_f, idx_f = md.primary_test(clf_f, x_test_f, model_name='{}_f'.format(model))
         result_m, idx_m = md.primary_test(clf_m, x_test_m, model_name='{}_m'.format(model))
         y_pred = (result_f + result_m) / 2
+
         with open('{}_flabel_map.pkl'.format(model), 'rb') as lm:
             label_map = pickle.load(lm)
-    
-        pred = label_map.inverse_transform(y_pred, 0.5)
+
+        new_pred = []
+        for label in y_pred:
+            tmp = label_map.inverse_transform(label)
+            new_pred.append(tmp)
+        
+        new_pred = np.array(new_pred)
         result = pd.DataFrame()
         result['id'] = idx_f
-        result['pred'] = pred
-
+        result['pred'] = new_pred.reshape((new_pred.shape[0]*new_pred.shape[1], 1))
+        result.to_csv('prime.csv', index=False)
+    
     # using only one of either features
     else:
         if flag == 'train':
@@ -50,7 +58,6 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
         x_test = utils.load_data(os.path.join(datadir, '{}'.format(feature)), flag='test')
         result = md.test(clf, x_test, model_name=model)
 
-    result.to_csv('prime_result.csv')   
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)
     result = utils.trim(result, datadir)

@@ -28,6 +28,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
     # Save labelBinarizer
     if model_name.split('_')[-1] == 'm':
         x_train = np.load('./data/mfcc/sents.npy')
+        labels = np.load('./data/mfcc/sents_labels.npy')
         with open('{}_flabel_map.pkl'.format(model_name.split('_')[0]), 'rb') as f:
             lb = pickle.load(f)
         for label in labels:
@@ -38,6 +39,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
  
     else:
         x_train = np.load('./data/fbank/sents.npy')
+        labels = np.load('./data/fbank/sents_labels.npy')
         lb = LabelBinarizer()
         lb.fit(merged['label'].values)
 
@@ -57,7 +59,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(GRU(128, input_shape=(steps, x_train.shape[2]), return_sequences=True))
+    rnn.add(GRU(128, input_shape=(None, x_train.shape[2]), return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
     #rnn.add(TimeDistributed(Dropout(0.2)))
@@ -107,7 +109,7 @@ def test(model, x_test, model_name=''):
     idx = x_test['id']
     steps = 6
 
-    if moedel_name.split('_')[-1] == m:
+    if moedel_name.split('_')[-1] == 'm':
         x_test = np.load('data/mfcc/mfcc_test_all_steps{}.npy'.format(steps))  
     else:
         x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
@@ -125,6 +127,11 @@ def test(model, x_test, model_name=''):
 
 def primary_test(model, x_test, model_name=''):
     
+    if model_name.split('_')[-1] == 'f':
+        feature = 'fbank'
+    else:
+        feature = 'mfcc'
+
     idx = x_test['id']
     steps = 6
     #frames = np.array([i for i in x_test['feature'].values])
@@ -133,8 +140,9 @@ def primary_test(model, x_test, model_name=''):
     #frames = np.append(frames, padding, axis=0)
     #frames = np.append(padding, frames, axis=0)
     #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
-    x_train = np.load('./data/{}/test_sents.npy'.format(model_name))
-    y_pred = model.predict(x_test, batch_size=128, verbose=1)
+    x_test = np.load('./data/{}/test_sents.npy'.format(feature))
+    print(x_test.shape)
+    y_pred = model.predict(x_test, batch_size=256, verbose=1)
     return y_pred, idx
 
 if __name__ == "__main__":

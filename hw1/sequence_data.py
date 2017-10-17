@@ -5,11 +5,9 @@ import numpy as np
 
 datadir='data/'
 feature='fbank'
-
-xtrain = utils.load_data(os.path.join(datadir, '{}'.format(feature)))
-y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'), 
-                              header=None, names=['id', 'label'])
-
+#xtrain = utils.load_data(os.path.join(datadir, '{}'.format(feature)))
+#y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'), header=None, names=['id', 'label'])
+'''
 merged = xtrain.merge(y_train, how='left')
 merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']])
 
@@ -27,9 +25,12 @@ for person, new_df in merged.groupby(level=0):
         sents.append(np.append(frames, padding, axis=0))
         labels.append(np.append(label, lpadding, axis=0))
 
+np.save('./data/{}/sents_labels'.format(feature), np.array([i for i in labels]))
+
 new = np.array([i for i in sents])
 np.save('./data/{}/sents'.format(feature), new)
 
+'''
 merged = utils.load_data(os.path.join(datadir, feature), flag='test')
 merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']])
 sents = []
@@ -41,8 +42,8 @@ for person, new_df in merged.groupby(level=0):
 new = np.array([i for i in sents])
 np.save('./data/{}/test_sents'.format(feature), new)
 
-
 feature='mfcc'
+'''
 xtrain = utils.load_data(os.path.join(datadir, '{}'.format(feature)))
 y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'), 
                               header=None, names=['id', 'label'])
@@ -64,9 +65,10 @@ for person, new_df in merged.groupby(level=0):
         sents.append(np.append(frames, padding, axis=0))
         labels.append(np.append(label, lpadding, axis=0))
 
+np.save('./data/{}/sents_labels'.format(feature), np.array([i for i in labels]))
 new = np.array([i for i in sents])
 np.save('./data/{}/sents'.format(feature), new)
-
+'''
 merged = utils.load_data(os.path.join(datadir, feature), flag='test')
 merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']])
 sents = []
