@@ -8,7 +8,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
     from keras.layers import LSTM, GRU, TimeDistributed
-    from keras.layers import Conv1D, MaxPooling1D, Permute
+    from keras.layers import Conv2D, MaxPooling2D, Permute, Reshape
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -53,19 +53,18 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Permute((2, 1, 3), input_shape=(x_train.shape[1], x_train.shape[2], 1)))
-    rnn.add(Conv2D(256, kernel_size=2))#, input_shape=(None, x_train.shape[2])))
+    rnn.add(Conv2D(128, kernel_size=5, padding='same', input_shape=(x_train.shape[1], x_train.shape[2], 1)))
     rnn.add(MaxPooling2D())
-    rnn.add(Conv2D(512, kernel_size=2))
+    rnn.add(Conv2D(256, kernel_size=3, padding='same'))
     rnn.add(MaxPooling2D())
-    rnn.add(Conv2D(x_train.shape[1], kernel_size=2)) 
-    rnn.add(Reshape((x_train.shape[1], -1)))
-    rnn.add(GRU(128, dropout=0.2, return_sequences=True))
+    rnn.add(Conv2D(256, kernel_size=2, padding='same')) 
+    rnn.add(Reshape(x_train.shape[1], -1))
+    rnn.add(GRU(128, return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2)))
+    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
+    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    #rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
     #rnn.add(TimeDistributed(Dropout(0.2)))
     #rnn.add(Flatten())
