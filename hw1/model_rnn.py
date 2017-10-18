@@ -15,13 +15,6 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
 
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
-    #frames = np.array([i for i in merged['feature'].values])
-
-    steps = 10
-    #padding = np.zeros((steps//2, len(merged['feature'].values[0])))
-    #frames = np.append(frames, padding, axis=0)
-    #frames = np.append(padding, frames, axis=0)
-    #x_train = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
     new_label = []
     y_train = merged['label'].values
     
@@ -59,7 +52,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(GRU(128, input_shape=(None, x_train.shape[2]), return_sequences=True))
+    rnn.add(GRU(500, input_shape=(None, x_train.shape[2]), return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
     #rnn.add(TimeDistributed(Dropout(0.2)))
