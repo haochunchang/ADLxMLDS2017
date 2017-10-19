@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
+def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
     from keras.layers import LSTM, GRU, TimeDistributed
-    from keras.layers import Conv2D, MaxPooling2D, Permute, Reshape
+    from keras.layers import Conv2D, MaxPooling2D, MaxPooling1D, Permute, Reshape
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -49,16 +49,26 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
     print(x_train.shape, y_train.shape)
     x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
     # Split validation data
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=6)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=6)
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv2D(128, kernel_size=5, padding='same', input_shape=(x_train.shape[1], x_train.shape[2], 1)))
-    rnn.add(MaxPooling2D())
-    rnn.add(Conv2D(256, kernel_size=3, padding='same'))
-    rnn.add(MaxPooling2D())
-    rnn.add(Conv2D(256, kernel_size=2, padding='same')) 
-    rnn.add(Reshape(x_train.shape[1], -1))
+    rnn.add(Conv2D(64, kernel_size=7, padding='same', input_shape=(x_train.shape[1], x_train.shape[2], 1)))
+    rnn.add(MaxPooling2D(pool_size=3))
+    rnn.add(Conv2D(128, kernel_size=5, padding='same'))
+    rnn.add(MaxPooling2D(pool_size=3))
+    if model_name.split('_')[-1] == 'm':
+        rnn.add(Conv2D(259, kernel_size=3, padding='same'))
+        #rnn.add(MaxPooling2D(pool_size=3)) 
+    else:
+        rnn.add(Conv2D(128, kernel_size=3, padding='same'))
+        rnn.add(MaxPooling2D(pool_size=2))
+        rnn.add(Conv2D(259, kernel_size=2, padding='same')) 
+        #rnn.add(MaxPooling2D(pool_size=3))
+    sh = rnn.layers[-1].output_shape
+    print(sh)
+    #rnn.add(TimeDistributed(GRU(128, return_sequences=True)))
+    rnn.add(Reshape((sh[2]*sh[3], sh[1])))
     rnn.add(GRU(128, return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
@@ -150,7 +160,7 @@ def primary_test(model, x_test, model_name=''):
     #frames = np.append(padding, frames, axis=0)
     #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
     x_test = np.load('./data/{}/test_sents.npy'.format(feature))
-    y_pred = model.predict(x_test, batch_size=256, verbose=1)
+    y_pred = model.predict(x_test, batch_size=32, verbose=1)
     return y_pred, idx
 
 if __name__ == "__main__":
