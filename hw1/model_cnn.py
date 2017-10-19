@@ -58,7 +58,7 @@ def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
     rnn.add(Conv2D(128, kernel_size=5, padding='same'))
     rnn.add(MaxPooling2D(pool_size=3))
     if model_name.split('_')[-1] == 'm':
-        rnn.add(Conv2D(259, kernel_size=3, padding='same'))
+        rnn.add(Conv2D(259, kernel_size=2, padding='valid'))
         #rnn.add(MaxPooling2D(pool_size=3)) 
     else:
         rnn.add(Conv2D(128, kernel_size=3, padding='same'))
