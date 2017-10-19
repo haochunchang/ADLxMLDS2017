@@ -51,12 +51,12 @@ def main(datadir, outfilepath, flag='train', model='rnn', feature='fbank'):
     else:
         if flag == 'train':
             x_train = utils.load_data(os.path.join(datadir, '{}'.format(feature)))
-            clf = md.train(x_train, y_train, model_name=model)
+            clf = md.train(x_train, y_train, model_name=model+'_'+feature[0])
         else:
-            clf = md.load_pretrained(model_name=model)
+            clf = md.load_pretrained(model_name=model+'_'+feature[0])
         # Testing
         x_test = utils.load_data(os.path.join(datadir, '{}'.format(feature)), flag='test')
-        result = md.test(clf, x_test, model_name=model)
+        result = md.test(clf, x_test, model_name=model+'_'+feature[0])
 
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)
