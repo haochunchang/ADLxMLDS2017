@@ -7,7 +7,7 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
-    from keras.layers import LSTM, GRU, TimeDistributed
+    from keras.layers import LSTM, GRU, TimeDistributed, RepeatVector
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -52,8 +52,9 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(GRU(500, input_shape=(None, x_train.shape[2]), return_sequences=True))
-    #rnn.add(GRU(128, dropout=0.2))
+    rnn.add(GRU(500, input_shape=(None, x_train.shape[2])))
+    rnn.add(RepeatVector(779))
+    rnn.add(GRU(500, dropout=0.2, return_sequences=True))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
     #rnn.add(TimeDistributed(Dropout(0.2)))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
