@@ -2,13 +2,12 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
+def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
-    from keras.layers import LSTM, GRU, TimeDistributed
-    from keras.layers import Conv1D, Conv2D, MaxPooling2D, MaxPooling1D, Permute, Reshape
+    from keras.layers import LSTM, GRU, TimeDistributed, RepeatVector
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -19,35 +18,26 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
     new_label = []
     y_train = merged['label'].values
     
+    x_train_m = np.load('./data/mfcc/sents.npy')
+    x_train_f = np.load('./data/fbank/sents.npy')
+    print(x_train_m.shape, x_train_f.shape)
+    x_train = np.append(x_train_m, x_train_f, axis=2)
+    labels = np.load('./data/fbank/sents_labels.npy')
+
     # Save labelBinarizer
-    if model_name.split('_')[-1] == 'm':
-        x_train = np.load('./data/mfcc/sents.npy')
-        labels = np.load('./data/mfcc/sents_labels.npy')
-        with open('{}_flabel_map.pkl'.format(model_name.split('_')[0]), 'rb') as f:
-            lb = pickle.load(f)
-        for label in labels:
-            tmp = lb.transform(label.flatten())
-            new_label.append(tmp)
+    lb = LabelBinarizer()
+    lb.fit(merged['label'].values)
+    with open('{}label_map.pkl'.format(model_name), 'wb') as f:
+        pickle.dump(lb, f)
 
-        y_train = np.array(new_label)
- 
-    else:
-        x_train = np.load('./data/fbank/sents.npy')
-        labels = np.load('./data/fbank/sents_labels.npy')
-        lb = LabelBinarizer()
-        lb.fit(merged['label'].values)
+    for label in labels:
+        tmp = lb.transform(label.flatten())
+        new_label.append(tmp)
 
-        for label in labels:
-            tmp = lb.transform(label.flatten())
-            new_label.append(tmp)
-
-        y_train = np.array(new_label)
- 
-        with open('{}label_map.pkl'.format(model_name), 'wb') as f:
-            pickle.dump(lb, f)
-
+    y_train = np.array(new_label)
+ 	
     print(x_train.shape, y_train.shape)
-    #x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
+
     # Split validation data
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=6)
  
@@ -94,7 +84,7 @@ def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
     # Checkpoints
     checkpointer = ModelCheckpoint(filepath="./models/{}.h5".format(model_name), 
                     verbose=1, save_best_only=True, monitor='val_acc', mode='max')  
-    earlystopping = EarlyStopping(monitor='val_acc', patience = 5, verbose=1, mode='max')
+    earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
  
     # Train model
     rnn.fit(x_train, y_train, batch_size=batch_size,
@@ -112,34 +102,9 @@ def load_pretrained(path=os.path.join('.', 'models'), model_name='rnn'):
 
     return model
 
+
 def test(model, x_test, model_name=''):
     
-    idx = x_test['id']
-    steps = 6
-
-    if moedel_name.split('_')[-1] == 'm':
-        x_test = np.load('data/mfcc/mfcc_test_all_steps{}.npy'.format(steps))  
-    else:
-        x_test = np.load('data/fbank/fbank_test_all_steps{}.npy'.format(steps))  
-    y_pred = model.predict(x_test, batch_size=256, verbose=1)
-
-    with open('{}label_map.pkl'.format(model_name), 'rb') as lm:
-        label_map = pickle.load(lm)
-    
-    pred = label_map.inverse_transform(y_pred, 0.5)
-    result = pd.DataFrame()
-    result['id'] = idx
-    result['pred'] = pred
-
-    return result
-
-def primary_test(model, x_test, model_name=''):
-    
-    if model_name.split('_')[-1] == 'f':
-        feature = 'fbank'
-    else:
-        feature = 'mfcc'
-
     # Pad frames id to match with padded prediction
     idx = x_test['id']
     idx.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in idx])
@@ -151,14 +116,9 @@ def primary_test(model, x_test, model_name=''):
             new_idx += fea
     
     idx = pd.Series(new_idx)
-    #frames = np.array([i for i in x_test['feature'].values])
-    # Pad zero
-    #padding = np.zeros((steps//2, len(x_test['feature'].values[0])))
-    #frames = np.append(frames, padding, axis=0)
-    #frames = np.append(padding, frames, axis=0)
-    #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
-    x_test = np.load('./data/{}/test_sents.npy'.format(feature))
-    y_pred = model.predict(x_test, batch_size=128, verbose=1)
+    x_test = np.load('./test_sents.npy')
+    y_pred = model.predict(x_test, batch_size=64, verbose=1)
+    
     return y_pred, idx
 
 if __name__ == "__main__":
