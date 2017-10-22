@@ -57,7 +57,7 @@ def combine_phone_seq(res):
     new_result = res.groupby(new_idx).apply(lambda x: x['pred'].str.cat(sep=','))
     return new_result
 
-def get_sequence(merged, steps, feature):
+def get_test_sequence(fbank, mfcc):
     '''
     Preprocess features, avoiding cross-sentences steps
     For each sentence start, pad with zeros, not previous sentence
@@ -66,40 +66,28 @@ def get_sequence(merged, steps, feature):
     steps: timesteps considered
     Return: (n_samples, steps, n_features) 
     ''' 
-    merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']]) 
-    merged = merged.drop(['id', 'label'], axis=1)
+    fbank.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in fbank['id']])
+    sents = []
+    for person, new_df in fbank.groupby(level=0):
+        for sentence, fea in new_df.groupby(level=1):       
+            frames = np.array([i for i in fea['feature'].values])
+            padding = np.zeros((777-frames.shape[0], frames.shape[1]))
+            sents.append(np.append(frames, padding, axis=0))
+    new_f = np.array([i for i in sents])
+	
+    mfcc.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in mfcc['id']])
+    sents = []
+    for person, new_df in mfcc.groupby(level=0):
+    	for sentence, fea in new_df.groupby(level=1):       
+            frames = np.array([i for i in fea['feature'].values])
+            padding = np.zeros((777-frames.shape[0], frames.shape[1]))
+            sents.append(np.append(frames, padding, axis=0))
 
-    padding = np.zeros((steps // 2, len(merged['feature'].values[0])))    
-    x_train = np.empty((1, steps, len(merged['feature'].values[0])))
-    i = 0
-    for person, new_df in merged.groupby(level=0):
-        for sentence, fea in new_df.groupby(level=1):
-            frames = np.append(padding, np.array([i for i in fea['feature'].values]), axis=0)
-            frames = np.append(frames, padding, axis=0)
-            x_train = np.append(x_train, np.array([frames[i-steps//2:i+steps//2, :] 
-                                                   for i in range(steps//2, frames.shape[0]-steps//2)]), axis=0)
-        print(i, x_train.shape)
-        i += 1    
-    x_train = np.delete(x_train, (0), axis=0)
-    np.save('./data/{}/{}_all_steps{}'.format(feature, feature, steps), x_train)
-
-def get_test_sequence(test, steps, feature):
-
-    test.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in test['id']]) 
-
-    padding = np.zeros((steps // 2, len(test['feature'].values[0])))    
-    x_test = np.empty((1, steps, len(test['feature'].values[0])))
-    i = 0
-    for person, new_df in test.groupby(level=0):
-        for sentence, fea in new_df.groupby(level=1):
-            frames = np.append(padding, np.array([i for i in fea['feature'].values]), axis=0)
-            frames = np.append(frames, padding, axis=0)
-            x_test = np.append(x_test, np.array([frames[i-steps//2:i+steps//2, :] 
-                                                   for i in range(steps//2, frames.shape[0]-steps//2)]), axis=0)
-        print(i, x_test.shape)
-        i += 1    
-    x_test = np.delete(x_test, (0), axis=0)
-    np.save('./data/{}/{}_test_all_steps{}'.format(feature, feature, steps), x_test)
+    new_m = np.array([i for i in sents])
+	
+    new = np.append(new_f, new_m, axis=2)
+    np.save('./test_sents', new)
+    return "Test data preprocessing done."
 
 if __name__ == "__main__":
     result = pd.read_csv('prime_result.csv', index_col=0)
