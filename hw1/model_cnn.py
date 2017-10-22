@@ -53,15 +53,17 @@ def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv2D(64, kernel_size=7, padding='same', input_shape=(x_train.shape[1], x_train.shape[2], 1)))
+    rnn.add(Conv2D(128, kernel_size=7, padding='same', input_shape=(x_train.shape[1], x_train.shape[2], 1)))
+    rnn.add(Conv2D(128, kernel_size=7, padding='same'))
     rnn.add(MaxPooling2D(pool_size=3))
-    rnn.add(Conv2D(128, kernel_size=5, padding='same'))
+    rnn.add(Conv2D(256, kernel_size=5, padding='same'))
+    rnn.add(Conv2D(256, kernel_size=5, padding='same'))
     rnn.add(MaxPooling2D(pool_size=3))
     if model_name.split('_')[-1] == 'm':
         rnn.add(Conv2D(259, kernel_size=2, padding='valid'))
         #rnn.add(MaxPooling2D(pool_size=3)) 
     else:
-        rnn.add(Conv2D(128, kernel_size=3, padding='same'))
+        rnn.add(Conv2D(256, kernel_size=3, padding='same'))
         rnn.add(MaxPooling2D(pool_size=2))
         rnn.add(Conv2D(259, kernel_size=2, padding='same')) 
         #rnn.add(MaxPooling2D(pool_size=3))
@@ -69,7 +71,7 @@ def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
     print(sh)
     #rnn.add(TimeDistributed(GRU(128, return_sequences=True)))
     rnn.add(Reshape((sh[2]*sh[3], sh[1])))
-    rnn.add(GRU(128, return_sequences=True))
+    rnn.add(GRU(500, return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
     #rnn.add(TimeDistributed(Dropout(0.2)))
@@ -96,7 +98,7 @@ def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
     # Checkpoints
     checkpointer = ModelCheckpoint(filepath="./models/{}.h5".format(model_name), 
                     verbose=1, save_best_only=True, monitor='val_acc', mode='max')  
-    earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
+    earlystopping = EarlyStopping(monitor='val_acc', patience = 5, verbose=1, mode='max')
  
     # Train model
     rnn.fit(x_train, y_train, batch_size=batch_size,
