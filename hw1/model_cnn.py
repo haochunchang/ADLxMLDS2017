@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
+def train(xtrain, ytrain, batch_size=128, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
@@ -53,20 +53,16 @@ def train(xtrain, ytrain, batch_size=32, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
-    rnn.add(Conv1D(128, kernel_size=7, padding='same'))
+    rnn.add(Conv1D(64, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
+    rnn.add(Conv1D(64, kernel_size=7, padding='same'))
     #rnn.add(MaxPooling2D(pool_size=3))
-    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
-    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
+    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
     #rnn.add(MaxPooling2D(pool_size=3))
-    if model_name.split('_')[-1] == 'm':
-        rnn.add(Conv1D(259, kernel_size=2, padding='valid'))
-        #rnn.add(MaxPooling2D(pool_size=3)) 
-    else:
-        rnn.add(Conv1D(256, kernel_size=3, padding='same'))
-        #rnn.add(MaxPooling2D(pool_size=2))
-        rnn.add(Conv1D(259, kernel_size=2, padding='same')) 
-        #rnn.add(MaxPooling2D(pool_size=3))
+    rnn.add(Conv1D(256, kernel_size=3, padding='same'))
+    #rnn.add(MaxPooling2D(pool_size=2))
+    rnn.add(Conv1D(256, kernel_size=3, padding='same')) 
+    #rnn.add(MaxPooling2D(pool_size=3))
     sh = rnn.layers[-1].output_shape
     print(sh)
     #rnn.add(TimeDistributed(GRU(128, return_sequences=True)))
@@ -162,7 +158,7 @@ def primary_test(model, x_test, model_name=''):
     #frames = np.append(padding, frames, axis=0)
     #x_test = np.array([frames[i-steps//2:i+steps//2, :] for i in range(steps//2, frames.shape[0]-steps//2)])
     x_test = np.load('./data/{}/test_sents.npy'.format(feature))
-    y_pred = model.predict(x_test, batch_size=32, verbose=1)
+    y_pred = model.predict(x_test, batch_size=128, verbose=1)
     return y_pred, idx
 
 if __name__ == "__main__":

@@ -52,9 +52,9 @@ def train(xtrain, ytrain, batch_size=256, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(GRU(500, input_shape=(None, x_train.shape[2])))
-    rnn.add(RepeatVector(779))
-    rnn.add(GRU(500, dropout=0.2, return_sequences=True))
+    rnn.add(GRU(500, input_shape=(None, x_train.shape[2]), return_sequences=True))
+    rnn.add(GRU(500, dropout=0.3, return_sequences=True))
+    rnn.add(GRU(500, dropout=0.3, return_sequences=True))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
     #rnn.add(TimeDistributed(Dropout(0.2)))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
