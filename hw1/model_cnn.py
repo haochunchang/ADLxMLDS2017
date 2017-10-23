@@ -44,26 +44,18 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(256, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
+    rnn.add(Conv1D(512, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
     #rnn.add(Conv1D(256, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
-    rnn.add(Conv1D(512, kernel_size=5, padding='same'))
-    rnn.add(BatchNormalization())
-    rnn.add(Conv1D(512, kernel_size=5, padding='same'))
-    rnn.add(BatchNormalization())
-    rnn.add(Conv1D(256, kernel_size=3, padding='same'))
-    rnn.add(BatchNormalization())
-    #rnn.add(Conv1D(256, kernel_size=3, padding='same')) 
     rnn.add(GRU(500, return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
-    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    #rnn.add(TimeDistributed(Dropout(0.2)))
-    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    #rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(512, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(128, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
-    #rnn.add(TimeDistributed(Dropout(0.2)))
-    #rnn.add(Flatten())
-    #rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
     rnn.compile(loss='categorical_crossentropy',

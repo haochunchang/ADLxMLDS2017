@@ -44,16 +44,13 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     # Define RNN model
     rnn = Sequential()
     rnn.add(GRU(500, input_shape=(None, x_train.shape[2]), return_sequences=True))
-    rnn.add(GRU(500, dropout=0.3, return_sequences=True))
-    rnn.add(GRU(500, dropout=0.3, return_sequences=True))
-    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    #rnn.add(TimeDistributed(Dropout(0.2)))
-    #rnn.add(TimeDistributed(Dense(256, activation='relu')))
-    #rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(512, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(128, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
-    #rnn.add(TimeDistributed(Dropout(0.2)))
-    #rnn.add(Flatten())
-    #rnn.add(Dense(y_train.shape[1], activation='softmax'))
  
     # Compile & print model summary
     rnn.compile(loss='categorical_crossentropy',
@@ -71,7 +68,7 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     # Checkpoints
     checkpointer = ModelCheckpoint(filepath="./models/{}.h5".format(model_name), 
                     verbose=1, save_best_only=True, monitor='val_acc', mode='max')  
-    earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
+    earlystopping = EarlyStopping(monitor='val_acc', patience = 5, verbose=1, mode='max')
  
     # Train model
     rnn.fit(x_train, y_train, batch_size=batch_size,
