@@ -87,7 +87,7 @@ def get_test_sequence(fbank, mfcc):
 	
     new = np.append(new_f, new_m, axis=2)
     np.save('./test_sents', new)
-    return "Test data preprocessing done."
+    print("Test data preprocessing done.")
 
 if __name__ == "__main__":
     result = pd.read_csv('prime_result.csv', index_col=0)
