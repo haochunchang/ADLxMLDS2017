@@ -7,11 +7,10 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
-    from keras.layers import LSTM, GRU, TimeDistributed, RepeatVector
+    from keras.layers import LSTM, GRU, TimeDistributed, Bidirectional
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import LabelBinarizer    
 
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
@@ -20,22 +19,9 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     
     x_train_m = np.load('./data/mfcc/sents.npy')
     x_train_f = np.load('./data/fbank/sents.npy')
-    print(x_train_m.shape, x_train_f.shape)
     x_train = np.append(x_train_m, x_train_f, axis=2)
-    labels = np.load('./data/fbank/sents_labels.npy')
+    y_train = np.load('./data/fbank/sents_labels.npy')
 
-    # Save labelBinarizer
-    lb = LabelBinarizer()
-    lb.fit(merged['label'].values)
-    with open('{}label_map.pkl'.format(model_name), 'wb') as f:
-        pickle.dump(lb, f)
-
-    for label in labels:
-        tmp = lb.transform(label.flatten())
-        new_label.append(tmp)
-
-    y_train = np.array(new_label)
- 	
     print(x_train.shape, y_train.shape)
 
     # Split validation data
@@ -43,8 +29,12 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(GRU(500, input_shape=(None, x_train.shape[2]), return_sequences=True))
-    rnn.add(TimeDistributed(Dense(512, activation='relu')))
+    rnn.add(Bidirectional(GRU(256, input_shape=(None, x_train.shape[2]), return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(64, return_sequences=True)))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))

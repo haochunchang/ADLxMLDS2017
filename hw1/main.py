@@ -42,7 +42,6 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     for label in y_pred:
         print(label.max(), label.argmax())
         tmp = label_map.inverse_transform(label, threshold)
-        print(tmp)
         new_pred.append(tmp)
 
     new_pred = np.array(new_pred)

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
+def train(xtrain, xtrain2, ytrain, batch_size=128, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
@@ -30,14 +30,15 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(512, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
-    #rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(Conv1D(64, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
+    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
+    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
     #rnn.add(BatchNormalization())
-    rnn.add(Bidirectional(GRU(500, dropout=0.4, return_sequences=True)))
-    #rnn.add(Bidirectional(GRU(300, dropout=0.4, return_sequences=True)))
-    #rnn.add(Bidirectional(GRU(200, dropout=0.4, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
-    rnn.add(TimeDistributed(Dense(512, activation='relu')))
+    rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
@@ -94,7 +95,7 @@ def test(model, x_test, model_name=''):
     
     idx = pd.Series(new_idx)
     x_test = np.load('./test_sents.npy')
-    y_pred = model.predict(x_test, batch_size=64, verbose=1)
+    y_pred = model.predict(x_test, batch_size=128, verbose=1)
     
     return y_pred, idx
 

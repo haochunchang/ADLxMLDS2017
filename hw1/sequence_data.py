@@ -1,5 +1,5 @@
 import utils
-import os
+import os, pickle
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelBinarizer    
@@ -15,6 +15,8 @@ merged = xtrain.merge(y_train, how='left')
 # Save labelBinarizer
 lb = LabelBinarizer()
 lb.fit(merged['label'].values)
+sil_loc = lb.transform(np.array(['sil'])).argmax()
+print(sil_loc)
 with open('label_map.pkl', 'wb') as f:
     pickle.dump(lb, f)
  
@@ -29,7 +31,7 @@ for person, new_df in merged.groupby(level=0):
         label = np.array([i for i in fea['label'].values]) 
         label = lb.transform(label)
         lpadding = np.zeros((777-label.shape[0], label.shape[1]))
-        
+        lpadding[:, sil_loc] = 1
         frames = np.array([i for i in fea['feature'].values])
         padding = np.zeros((777-frames.shape[0], frames.shape[1]))
         sents.append(np.append(frames, padding, axis=0))
@@ -61,7 +63,8 @@ for person, new_df in merged.groupby(level=0):
         label = np.array([i for i in fea['label'].values]) 
         label = lb.transform(label)
         lpadding = np.zeros((777-label.shape[0], label.shape[1]))
-        
+        lpadding[:, sil_loc] = 1
+       
         frames = np.array([i for i in fea['feature'].values])
         padding = np.zeros((777-frames.shape[0], frames.shape[1]))
         sents.append(np.append(frames, padding, axis=0))
