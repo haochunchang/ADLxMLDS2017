@@ -27,7 +27,7 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     utils.get_test_sequence(x_test_f, x_test_m)
     y_pred, idx = md.test(clf, x_test_f, model_name=model)
 
-    threshold = 0.6
+    threshold = 0.5
     with open('{}label_map.pkl'.format(model), 'rb') as lm:
         label_map = pickle.load(lm)
 
@@ -40,7 +40,7 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     result = pd.DataFrame()
     result['id'] = idx
     result['pred'] = new_pred.reshape((new_pred.shape[0]*new_pred.shape[1], 1))
-    #result.to_csv('prime.csv', index=False)
+    result.to_csv('{}prime.csv'.format(model), index=False)
 
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)

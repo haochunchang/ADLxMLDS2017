@@ -74,9 +74,9 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
  
     # Train model
-    #rnn.fit(x_train, y_train, batch_size=batch_size,
-    #        verbose=1, epochs=epochs, validation_data=(x_val, y_val),
-    #        callbacks=[earlystopping, checkpointer])
+    rnn.fit(x_train, y_train, batch_size=batch_size,
+            verbose=1, epochs=epochs, validation_data=(x_val, y_val),
+            callbacks=[earlystopping, checkpointer])
     return rnn
 
 def load_pretrained(path=os.path.join('.', 'models'), model_name='rnn'):

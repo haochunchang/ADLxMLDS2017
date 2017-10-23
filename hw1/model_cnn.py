@@ -7,7 +7,8 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
-    from keras.layers import LSTM, GRU, TimeDistributed, RepeatVector
+    from keras.layers import LSTM, GRU, TimeDistributed
+    from keras.layers import Conv1D, BatchNormalization
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -43,20 +44,16 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(64, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
-    rnn.add(Conv1D(64, kernel_size=7, padding='same'))
-    #rnn.add(MaxPooling2D(pool_size=3))
-    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
-    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
-    #rnn.add(MaxPooling2D(pool_size=3))
+    rnn.add(Conv1D(256, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
+    #rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(BatchNormalization())
+    rnn.add(Conv1D(512, kernel_size=5, padding='same'))
+    rnn.add(BatchNormalization())
+    rnn.add(Conv1D(512, kernel_size=5, padding='same'))
+    rnn.add(BatchNormalization())
     rnn.add(Conv1D(256, kernel_size=3, padding='same'))
-    #rnn.add(MaxPooling2D(pool_size=2))
-    rnn.add(Conv1D(256, kernel_size=3, padding='same')) 
-    #rnn.add(MaxPooling2D(pool_size=3))
-    sh = rnn.layers[-1].output_shape
-    print(sh)
-    #rnn.add(TimeDistributed(GRU(128, return_sequences=True)))
-    #rnn.add(Reshape((sh[2]*sh[3], sh[1])))
+    rnn.add(BatchNormalization())
+    #rnn.add(Conv1D(256, kernel_size=3, padding='same')) 
     rnn.add(GRU(500, return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     #rnn.add(TimeDistributed(Dense(256, activation='relu')))
