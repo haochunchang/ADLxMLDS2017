@@ -32,14 +32,17 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     else:
         utils.get_test_sequence(x_test_f, x_test_m, save_all=True)
         y_pred, idx = md.concat_test(clf, x_test_f, x_test_m, model_name=model)
-
+    
     threshold = 0.5
-    with open('{}label_map.pkl'.format(model), 'rb') as lm:
+    with open('label_map.pkl', 'rb') as lm:
         label_map = pickle.load(lm)
 
     new_pred = []
+    print(label_map.classes_)
     for label in y_pred:
+        print(label.max(), label.argmax())
         tmp = label_map.inverse_transform(label, threshold)
+        print(tmp)
         new_pred.append(tmp)
 
     new_pred = np.array(new_pred)
@@ -47,7 +50,7 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     result['id'] = idx
     result['pred'] = new_pred.reshape((new_pred.shape[0]*new_pred.shape[1], 1))
     result.to_csv('{}prime.csv'.format(model), index=False)
-
+    
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)
     result = utils.trim(result, datadir)

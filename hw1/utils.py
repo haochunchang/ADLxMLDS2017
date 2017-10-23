@@ -17,6 +17,21 @@ def load_data(path, flag='train'):
     data['feature'] = feature
     return data
 
+def convert_one_hot(labels):
+    '''
+    Input: 3696,777,1
+    Return: 3696,777,48
+    '''
+    datadir = './data'
+    phone_char = pd.read_csv(os.path.join(datadir, '48phone_char.map'), sep='\t', 
+                             header=None, index_col=0, names=['num', 'char'])
+ 
+    labels = np.array([[phone_char.loc[i, 'num'] for i in labels[j, :, 0]] for j in range(labels.shape[0])])
+    print(labels)
+    targets = labels.reshape(-1)
+    onehot = np.eye(48)[targets]
+    #return onehot
+
 def phone_to_char(result, datadir):
     
     phone_char = pd.read_csv(os.path.join(datadir, '48phone_char.map'), sep='\t', 
@@ -94,10 +109,7 @@ def get_test_sequence(fbank, mfcc, save_all=True):
 
 
 if __name__ == "__main__":
-    datadir = './data'
+    labels = np.load('./data/fbank/sents_labels.npy')
 
-    # Testing
-    x_test_f = load_data(os.path.join(datadir, 'fbank'), flag='test')
-    x_test_m = load_data(os.path.join(datadir, 'mfcc'), flag='test')
- 
-    get_test_sequence(x_test_f, x_test_m, save_all=True)
+    y_train = convert_one_hot(labels)
+    print(y_train.shape)	

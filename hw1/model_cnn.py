@@ -12,7 +12,6 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import LabelBinarizer    
 
     # Preprocessing
     merged = xtrain.merge(ytrain, how='left')
@@ -22,20 +21,8 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     x_train_m = np.load('./data/mfcc/sents.npy')
     x_train_f = np.load('./data/fbank/sents.npy')
     x_train = np.append(x_train_m, x_train_f, axis=2)
-    labels = np.load('./data/fbank/sents_labels.npy')
-
-    # Save labelBinarizer
-    lb = LabelBinarizer()
-    lb.fit(merged['label'].values)
-    with open('{}label_map.pkl'.format(model_name), 'wb') as f:
-        pickle.dump(lb, f)
-
-    for label in labels:
-        tmp = lb.transform(label.flatten())
-        new_label.append(tmp)
-
-    y_train = np.array(new_label)
- 	
+    y_train = np.load('./data/fbank/sents_labels.npy')
+	
     print(x_train.shape, y_train.shape)
 
     # Split validation data
@@ -110,6 +97,15 @@ def test(model, x_test, model_name=''):
     y_pred = model.predict(x_test, batch_size=64, verbose=1)
     
     return y_pred, idx
+
+def test_train(model, model_name=''):
+    x_test1 = np.load('./data/fbank/sents.npy')
+    x_test2 = np.load('./data/mfcc/sents.npy')
+    x_test = np.append(x_test1, x_test2, axis=2)
+    y_pred = model.predict(x_test, batch_size=64, verbose=1)
+    
+    return y_pred
+
 
 if __name__ == "__main__":
     pass
