@@ -75,7 +75,7 @@ def get_test_sequence(fbank, mfcc, save_all=True):
             sents.append(np.append(frames, padding, axis=0))
     new_f = np.array([i for i in sents])
     if save_all:
-        np.save('./fbank/test_sents', new_f)
+        np.save('./data/fbank/test_sents', new_f)
 
     mfcc.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in mfcc['id']])
     sents = []
@@ -87,18 +87,17 @@ def get_test_sequence(fbank, mfcc, save_all=True):
 
     new_m = np.array([i for i in sents])
     if save_all:
-        np.save('./mfcc/test_sents', new_m)      
+        np.save('./data/mfcc/test_sents', new_m)      
     new = np.append(new_f, new_m, axis=2)
     np.save('./test_sents', new)
     print("Test data preprocessing done.")
 
 
 if __name__ == "__main__":
-    result = pd.read_csv('prime_result.csv', index_col=0)
-    result = combine_phone_seq(result)
-    result = trim(result, './data/')
-    sub = pd.DataFrame()
-    sub['id'] = result.index
-    sub['phone_sequence'] = result.values
-    sub.to_csv('~/Desktop/sub.csv', index=False)  
+    datadir = './data'
+
+    # Testing
+    x_test_f = load_data(os.path.join(datadir, 'fbank'), flag='test')
+    x_test_m = load_data(os.path.join(datadir, 'mfcc'), flag='test')
  
+    get_test_sequence(x_test_f, x_test_m, save_all=True)

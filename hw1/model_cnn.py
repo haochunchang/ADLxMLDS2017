@@ -21,7 +21,6 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     
     x_train_m = np.load('./data/mfcc/sents.npy')
     x_train_f = np.load('./data/fbank/sents.npy')
-    print(x_train_m.shape, x_train_f.shape)
     x_train = np.append(x_train_m, x_train_f, axis=2)
     labels = np.load('./data/fbank/sents_labels.npy')
 
@@ -46,7 +45,7 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     rnn = Sequential()
     rnn.add(Conv1D(512, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
     #rnn.add(Conv1D(256, kernel_size=5, padding='same'))
-    rnn.add(BatchNormalization())
+    #rnn.add(BatchNormalization())
     rnn.add(Bidirectional(GRU(500, dropout=0.4, return_sequences=True)))
     #rnn.add(Bidirectional(GRU(300, dropout=0.4, return_sequences=True)))
     #rnn.add(Bidirectional(GRU(200, dropout=0.4, return_sequences=True)))
