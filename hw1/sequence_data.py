@@ -33,22 +33,6 @@ np.save('./data/{}/sents_labels'.format(feature), np.array([i for i in labels]))
 new = np.array([i for i in sents])
 np.save('./data/{}/sents'.format(feature), new)
 
-merged = utils.load_data(os.path.join(datadir, feature), flag='test')
-merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']])
-sents = []
-sent_end = []
-for person, new_df in merged.groupby(level=0):
-    for sentence, fea in new_df.groupby(level=1):       
-        frames = np.array([i for i in fea['feature'].values])
-        padding = np.zeros((777-frames.shape[0], frames.shape[1]))
-        sents.append(np.append(frames, padding, axis=0))
-        sent_end.append(frames.shape[0])
-
-np.save('./data/{}/test_sent_ends'.format(feature), np.array(sent_end))
-
-new = np.array([i for i in sents])
-np.save('./data/{}/test_sents'.format(feature), new)
-
 #======================================================================
 feature='mfcc'
 
@@ -81,19 +65,4 @@ np.save('./data/{}/sents_labels'.format(feature), np.array([i for i in labels]))
 new = np.array([i for i in sents])
 np.save('./data/{}/sents'.format(feature), new)
 
-merged = utils.load_data(os.path.join(datadir, feature), flag='test')
-merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']])
-sents = []
-sent_end = []
-for person, new_df in merged.groupby(level=0):
-    for sentence, fea in new_df.groupby(level=1):       
-        frames = np.array([i for i in fea['feature'].values])
-        padding = np.zeros((777-frames.shape[0], frames.shape[1]))
-        sents.append(np.append(frames, padding, axis=0))
-        sent_end.append(frames.shape[0])
-
-np.save('./data/{}/test_sent_ends'.format(feature), np.array(sent_end))
-
-new = np.array([i for i in sents])
-np.save('./data/{}/test_sents'.format(feature), new)
 
