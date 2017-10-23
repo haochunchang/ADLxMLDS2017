@@ -10,6 +10,8 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
         import model_rnn as md
     elif model == 'cnn':
         import model_cnn as md 
+    elif model == 'concat':
+        import model_cnn_concat as md
 
     # Load in training data
     y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'),
@@ -24,8 +26,12 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     # Testing
     x_test_f = utils.load_data(os.path.join(datadir, 'fbank'), flag='test')
     x_test_m = utils.load_data(os.path.join(datadir, 'mfcc'), flag='test')
-    utils.get_test_sequence(x_test_f, x_test_m)
-    y_pred, idx = md.test(clf, x_test_f, model_name=model)
+    if model != 'concat':
+        utils.get_test_sequence(x_test_f, x_test_m, save_all=False)
+        y_pred, idx = md.test(clf, x_test_f, model_name=model)
+    else:
+        utils.get_test_sequence(x_test_f, x_test_m, save_all=True)
+        y_pred, idx = md.concat_test(clf, x_test_f, x_test_m, model_name=model)
 
     threshold = 0.5
     with open('{}label_map.pkl'.format(model), 'rb') as lm:
@@ -56,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("dir", help="Data Directory")   
     parser.add_argument("outpath", help="output file name / path") 
     parser.add_argument("-t", "--train", help="Train model from scratch", action='store_true')
-    parser.add_argument("model", type=str, choices=['rnn', 'cnn'], help="Select model: rnn or +cnn", default='rnn')
+    parser.add_argument("model", type=str, choices=['rnn', 'cnn', 'concat'], help="Select model: rnn or +cnn", default='rnn')
     args = parser.parse_args()
 
     if args.train:

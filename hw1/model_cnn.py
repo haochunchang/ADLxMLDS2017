@@ -47,7 +47,7 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     rnn.add(Conv1D(512, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
     #rnn.add(Conv1D(256, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
-    rnn.add(GRU(500, return_sequences=True))
+    rnn.add(GRU(500, dropout=0.4, return_sequences=True))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     rnn.add(TimeDistributed(Dense(512, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
@@ -73,7 +73,7 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     # Checkpoints
     checkpointer = ModelCheckpoint(filepath="./models/{}.h5".format(model_name), 
                     verbose=1, save_best_only=True, monitor='val_acc', mode='max')  
-    earlystopping = EarlyStopping(monitor='val_acc', patience = 10, verbose=1, mode='max')
+    earlystopping = EarlyStopping(monitor='val_acc', patience = 5, verbose=1, mode='max')
  
     # Train model
     rnn.fit(x_train, y_train, batch_size=batch_size,
