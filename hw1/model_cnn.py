@@ -7,7 +7,7 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
     from keras.layers import Dense, Dropout, Input, Flatten
-    from keras.layers import LSTM, GRU, TimeDistributed
+    from keras.layers import LSTM, GRU, TimeDistributed, Bidirectional
     from keras.layers import Conv1D, BatchNormalization
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
@@ -47,7 +47,9 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     rnn.add(Conv1D(512, kernel_size=5, padding='same', input_shape=(777, x_train.shape[2])))
     #rnn.add(Conv1D(256, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
-    rnn.add(GRU(500, dropout=0.4, return_sequences=True))
+    rnn.add(Bidirectional(GRU(500, dropout=0.4, return_sequences=True)))
+    #rnn.add(Bidirectional(GRU(300, dropout=0.4, return_sequences=True)))
+    #rnn.add(Bidirectional(GRU(200, dropout=0.4, return_sequences=True)))
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     rnn.add(TimeDistributed(Dense(512, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
