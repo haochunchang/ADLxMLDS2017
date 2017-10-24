@@ -18,9 +18,10 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
 	    header=None, names=['id', 'label'])
 
     if flag == 'train':
-        train_f = utils.load_data(os.path.join(datadir, 'fbank'))
-        train_m = utils.load_data(os.path.join(datadir, 'mfcc'))
-        clf = md.train(train_f, train_m, y_train, model_name=model)
+        #train_f = utils.load_data(os.path.join(datadir, 'fbank'))
+        #train_m = utils.load_data(os.path.join(datadir, 'mfcc'))
+        train = np.load(os.path.join(datadir, 'sents.npy'))
+        clf = md.train(train, y_train, model_name=model)
     else:
         clf = md.load_pretrained(model_name=model)
     # Testing
@@ -38,9 +39,7 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
         label_map = pickle.load(lm)
 
     new_pred = []
-    print(label_map.classes_)
     for label in y_pred:
-        print(label.max(), label.argmax())
         tmp = label_map.inverse_transform(label, threshold)
         new_pred.append(tmp)
 
