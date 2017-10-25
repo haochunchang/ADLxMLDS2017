@@ -34,7 +34,7 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
         utils.get_test_sequence(x_test_f, x_test_m, save_all=True)
         y_pred, idx = md.concat_test(clf, x_test_f, x_test_m, model_name=model)
    
-    with open('predict_proba.pkl', 'wb') as p:
+    with open('{}predict_proba.pkl'.format(model), 'wb') as p:
         pickle.dump((y_pred, idx), p)
  
     threshold = 0.5

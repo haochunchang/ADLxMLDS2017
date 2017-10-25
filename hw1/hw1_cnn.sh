@@ -1,2 +1,2 @@
 # $1: data dir, $2: output filename
-python3 main.py $1 $2 fbank cnn
+python3 main.py $1 $2 cnn

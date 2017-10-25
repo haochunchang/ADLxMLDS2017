@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
+def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
@@ -13,14 +13,7 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     from sklearn.model_selection import train_test_split
 
     # Preprocessing
-    merged = xtrain.merge(ytrain, how='left')
-    new_label = []
-    y_train = merged['label'].values
-    
-    x_train_m = np.load('./data/mfcc/sents.npy')
-    x_train_f = np.load('./data/fbank/sents.npy')
-    x_train = np.append(x_train_m, x_train_f, axis=2)
-    y_train = np.load('./data/fbank/sents_labels.npy')
+    y_train = np.load('./data/sents_labels.npy')
 
     print(x_train.shape, y_train.shape)
 
@@ -29,11 +22,11 @@ def train(xtrain, xtrain2, ytrain, batch_size=64, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Bidirectional(GRU(256, input_shape=(None, x_train.shape[2]), return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(64, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True), input_shape=(None, x_train.shape[2])))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
