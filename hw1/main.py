@@ -28,12 +28,15 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     x_test_f = utils.load_data(os.path.join(datadir, 'fbank'), flag='test')
     x_test_m = utils.load_data(os.path.join(datadir, 'mfcc'), flag='test')
     if model != 'concat':
-        utils.get_test_sequence(x_test_f, x_test_m, save_all=False)
+        #utils.get_test_sequence(x_test_f, x_test_m, save_all=False)
         y_pred, idx = md.test(clf, x_test_f, model_name=model)
     else:
         utils.get_test_sequence(x_test_f, x_test_m, save_all=True)
         y_pred, idx = md.concat_test(clf, x_test_f, x_test_m, model_name=model)
-    
+   
+    with open('predict_proba.pkl', 'wb') as p:
+        pickle.dump((y_pred, idx), p)
+ 
     threshold = 0.5
     with open('label_map.pkl', 'rb') as lm:
         label_map = pickle.load(lm)

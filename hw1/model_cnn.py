@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os, pickle
 
-def train(x_train, ytrain, batch_size=128, epochs=100, model_name='rnn'):
+def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
@@ -23,13 +23,19 @@ def train(x_train, ytrain, batch_size=128, epochs=100, model_name='rnn'):
  
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(64, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
-    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
-    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
-    #rnn.add(BatchNormalization())
+    rnn.add(Conv1D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
+    rnn.add(BatchNormalization())
+ 
+    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(BatchNormalization())
+    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(BatchNormalization())
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
