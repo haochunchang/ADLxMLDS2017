@@ -20,40 +20,28 @@ def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
 
     # Split validation data
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=6)
-    x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
     # Define RNN model
-    rnn = Sequential()
-    rnn.add(Conv2D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2], 1)))
-    rnn.add(MaxPooling2D(pool_size=2))
+    rnn = Sequential()    
+    rnn.add(Conv1D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
     rnn.add(BatchNormalization())
-    rnn.add(Conv2D(128, kernel_size=5, padding='same'))
-    rnn.add(MaxPooling2D(pool_size=2))
+    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
-    rnn.add(Conv2D(256, kernel_size=5, padding='same'))
-    rnn.add(MaxPooling2D(pool_size=3))
+    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
-    rnn.add(Conv2D(111, kernel_size=3, padding='valid'))
-    rnn.add(BatchNormalization())
-    sh = rnn.layers[-1].output_shape
-    print(sh)
-    rnn.add(Reshape((sh[2]*sh[3], sh[1])))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
     rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
-
-    #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
+    rnn.add(Bidirectional(GRU(128, dropout=0.4, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.4, return_sequences=True)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(128, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
-    rnn.add(TimeDistributed(Dense(128, activation='relu')))
-    rnn.add(TimeDistributed(Dropout(0.2))) 
     rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
- 
     # Compile & print model summary
     rnn.compile(loss='categorical_crossentropy',
                 optimizer='adam',
@@ -71,7 +59,7 @@ def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     checkpointer = ModelCheckpoint(filepath="./models/{}.h5".format(model_name), 
                     verbose=1, save_best_only=True, monitor='val_acc', mode='max')  
     earlystopping = EarlyStopping(monitor='val_acc', patience = 5, verbose=1, mode='max')
- 
+    print(x_train.shape) 
     # Train model
     rnn.fit(x_train, y_train, batch_size=batch_size,
             verbose=1, epochs=epochs, validation_data=(x_val, y_val),
@@ -103,7 +91,7 @@ def test(model, x_test, model_name=''):
     
     idx = pd.Series(new_idx)
     x_test = np.load('./test_sents.npy')
-    y_pred = model.predict(x_test, batch_size=128, verbose=1)
+    y_pred = model.predict(x_test, batch_size=64, verbose=1)
     
     return y_pred, idx
 
