@@ -25,16 +25,17 @@ def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     rnn = Sequential()
     rnn.add(Conv1D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
     rnn.add(BatchNormalization())
- 
-    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
     rnn.add(Conv1D(256, kernel_size=5, padding='same'))
     rnn.add(BatchNormalization())
-    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(BatchNormalization())
+    rnn.add(Bidirectional(GRU(512, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(512, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(256, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(256, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(256, dropout=0.2, return_sequences=True)))
 
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
@@ -43,6 +44,8 @@ def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
     rnn.add(TimeDistributed(Dropout(0.2)))
     rnn.add(TimeDistributed(Dense(128, activation='relu')))
     rnn.add(TimeDistributed(Dropout(0.2)))
+    rnn.add(TimeDistributed(Dense(128, activation='relu')))
+    rnn.add(TimeDistributed(Dropout(0.2))) 
     rnn.add(TimeDistributed(Dense(y_train.shape[2], activation='softmax')))
  
     # Compile & print model summary
