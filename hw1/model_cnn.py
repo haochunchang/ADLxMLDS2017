@@ -6,9 +6,9 @@ def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
 
     from keras.utils import plot_model
     from keras.models import Sequential, model_from_json
-    from keras.layers import Dense, Dropout, Input, Flatten
+    from keras.layers import Dense, Dropout, Input, Flatten, Reshape
     from keras.layers import LSTM, GRU, TimeDistributed, Bidirectional
-    from keras.layers import Conv1D, BatchNormalization
+    from keras.layers import Conv2D, Conv1D, MaxPooling2D, BatchNormalization
     from keras.callbacks import ModelCheckpoint, EarlyStopping 
     from keras.callbacks import TensorBoard, Callback
     from sklearn.model_selection import train_test_split
@@ -20,22 +20,28 @@ def train(x_train, ytrain, batch_size=64, epochs=100, model_name='rnn'):
 
     # Split validation data
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=6)
- 
+    x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
     # Define RNN model
     rnn = Sequential()
-    rnn.add(Conv1D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2])))
+    rnn.add(Conv2D(128, kernel_size=7, padding='same', input_shape=(None, x_train.shape[2], 1)))
+    rnn.add(MaxPooling2D(pool_size=2))
     rnn.add(BatchNormalization())
-    rnn.add(Conv1D(128, kernel_size=5, padding='same'))
+    rnn.add(Conv2D(128, kernel_size=5, padding='same'))
+    rnn.add(MaxPooling2D(pool_size=2))
     rnn.add(BatchNormalization())
-    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(Conv2D(256, kernel_size=5, padding='same'))
+    rnn.add(MaxPooling2D(pool_size=3))
     rnn.add(BatchNormalization())
-    rnn.add(Conv1D(256, kernel_size=5, padding='same'))
+    rnn.add(Conv2D(111, kernel_size=3, padding='valid'))
     rnn.add(BatchNormalization())
-    rnn.add(Bidirectional(GRU(512, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(512, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(256, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(256, dropout=0.2, return_sequences=True)))
-    rnn.add(Bidirectional(GRU(256, dropout=0.2, return_sequences=True)))
+    sh = rnn.layers[-1].output_shape
+    print(sh)
+    rnn.add(Reshape((sh[2]*sh[3], sh[1])))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
+    rnn.add(Bidirectional(GRU(128, dropout=0.2, return_sequences=True)))
 
     #rnn.add(GRU(128, dropout=0.2, return_sequences=True))
     rnn.add(TimeDistributed(Dense(256, activation='relu')))
