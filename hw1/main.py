@@ -10,8 +10,6 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
         import model_rnn as md
     elif model == 'cnn':
         import model_cnn as md 
-    elif model == 'concat':
-        import model_cnn_concat as md
 
     # Load in training data
     y_train = pd.read_csv(os.path.join(datadir, 'label', 'train.lab'),
@@ -27,12 +25,8 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     # Testing
     x_test_f = utils.load_data(os.path.join(datadir, 'fbank'), flag='test')
     x_test_m = utils.load_data(os.path.join(datadir, 'mfcc'), flag='test')
-    if model != 'concat':
-        #utils.get_test_sequence(x_test_f, x_test_m, save_all=False)
-        y_pred, idx = md.test(clf, x_test_f, model_name=model)
-    else:
-        utils.get_test_sequence(x_test_f, x_test_m, save_all=True)
-        y_pred, idx = md.concat_test(clf, x_test_f, x_test_m, model_name=model)
+    utils.get_test_sequence(x_test_f, x_test_m, save_all=False)
+    y_pred, idx = md.test(clf, x_test_f, model_name=model)
    
     #with open('{}_predict_proba.pkl'.format(model), 'wb') as p:
     #    pickle.dump((y_pred, idx), p)
