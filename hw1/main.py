@@ -34,8 +34,8 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
         utils.get_test_sequence(x_test_f, x_test_m, save_all=True)
         y_pred, idx = md.concat_test(clf, x_test_f, x_test_m, model_name=model)
    
-    with open('{}predict_proba.pkl'.format(model), 'wb') as p:
-        pickle.dump((y_pred, idx), p)
+    #with open('{}_predict_proba.pkl'.format(model), 'wb') as p:
+    #    pickle.dump((y_pred, idx), p)
  
     threshold = 0.5
     with open('label_map.pkl', 'rb') as lm:
@@ -50,7 +50,7 @@ def main(datadir, outfilepath, flag='train', model='rnn'):
     result = pd.DataFrame()
     result['id'] = idx
     result['pred'] = new_pred.reshape((new_pred.shape[0]*new_pred.shape[1], 1))
-    result.to_csv('{}prime.csv'.format(model), index=False)
+    #result.to_csv('{}prime.csv'.format(model), index=False)
     
     # Post-processing for submission 
     result = utils.combine_phone_seq(result)
