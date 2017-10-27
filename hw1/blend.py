@@ -41,7 +41,7 @@ def blend(x_test, path=os.path.join('.', 'models')):
     cnn_pred = cnn.predict(x_test, batch_size=64, verbose=1)
     best_pred = best.predict(x_test, batch_size=64, verbose=1)
 
-    y_pred = rnn_pred * 0.2 + cnn_pred * 0.4 + best_pred * 0.4
+    y_pred = rnn_pred * 0.25 + cnn_pred * 0.375 + best_pred * 0.375
 
     return y_pred, idx 
 
@@ -58,13 +58,12 @@ if __name__ == "__main__":
     #with open('{}_predict_proba.pkl'.format(model), 'wb') as p:
     #    pickle.dump((y_pred, idx), p)
  
-    threshold = 0.5
     with open('label_map.pkl', 'rb') as lm:
         label_map = pickle.load(lm)
 
     new_pred = []
     for label in y_pred:
-        tmp = label_map.inverse_transform(label, threshold)
+        tmp = label_map.inverse_transform(label, 0.5)
         new_pred.append(tmp)
 
     new_pred = np.array(new_pred)
