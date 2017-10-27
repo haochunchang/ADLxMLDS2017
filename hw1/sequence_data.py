@@ -19,7 +19,6 @@ print(merged.head())
 merged.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in merged['id']])
 print(merged.head())
 
-'''
 # Save labelBinarizer
 lb = LabelBinarizer()
 lb.fit(merged['label'].values)
@@ -31,7 +30,7 @@ with open('label_map.pkl', 'wb') as f:
 with open('label_map.pkl', 'rb') as f:
     lb = pickle.load(f)
 sil_loc = lb.transform(np.array(['sil'])).argmax()
-
+'''
 sents = []
 labels = []
 sent_end = []
