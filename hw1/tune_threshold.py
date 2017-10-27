@@ -9,22 +9,18 @@ from keras.models import model_from_json
 def train_distance(threshold):
 
     model_name = 'best'  
-    (y_pred, idx) = pd.read_pickle('{}_train_predict_proba.pkl'.format(model_name)) 
+    (y_pred, idx) = pd.read_pickle('{}_train_proba.pkl'.format(model_name)) 
     with open('label_map.pkl', 'rb') as lm:
         label_map = pickle.load(lm)
 
     # Hand cut threshold
-    y_pred[y_pred < threshold] = 0 
-
-    new_pred = []
-    for label in y_pred:
-        tmp = label_map.inverse_transform(label, 0.5)
-        new_pred.append(tmp)
-
-    new_pred = np.array(new_pred)
     result = pd.DataFrame()
     result['id'] = idx
-    result['pred'] = new_pred.reshape((new_pred.shape[0]*new_pred.shape[1], 1))
+    result['pred'] = y_pred.reshape((y_pred.shape[0]*y_pred.shape[1], 48))
+    result['pred'][result['pred'] < threshold] = 0
+
+    result['pred'] = label_map.inverse_transform(result['pred'].values, 0.5)
+
     result = utils.combine_phone_seq(result)
     result = utils.trim(result, datadir)
     

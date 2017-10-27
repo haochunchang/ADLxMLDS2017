@@ -10,7 +10,15 @@ path=os.path.join('.', 'models')
 train = utils.load_data(os.path.join('./data', 'fbank'))
 x_test = np.load('./data/sents.npy')
 idx = train['id']
-
+idx.index = pd.MultiIndex.from_tuples([tuple(k.split('_')) for k in idx])
+new_idx = []
+for person, new_df in idx.groupby(level=0):
+    for sentence, fea_id in new_df.groupby(level=1):
+        fea = list(fea_id)
+        fea += [person+'_'+sentence+'_'+str(i) for i in range(len(fea)+1, 778)]
+        new_idx += fea
+    
+idx = pd.Series(new_idx)
 #====================================================================
 with open(os.path.join(path, 'best_model.json'), "r") as json_file:
      best = model_from_json(json_file.read())
