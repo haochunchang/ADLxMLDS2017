@@ -41,7 +41,7 @@ def blend(x_test, path=os.path.join('.', 'models')):
     cnn_pred = cnn.predict(x_test, batch_size=64, verbose=1)
     best_pred = best.predict(x_test, batch_size=64, verbose=1)
 
-    y_pred = rnn_pred * 0.33 + cnn_pred * 0.33 + best_pred * 0.34
+    y_pred = rnn_pred * 0.3 + cnn_pred * 0.3 + best_pred * 0.4
 
     return y_pred, idx 
 
