@@ -26,21 +26,32 @@ def load_data(path=os.path.join('.', 'data'), flag='train'):
         x_train.append(np.load(p))
         idx = p.split('/')[-1][:-4]
         ans = next((item for item in label if item['id'] == idx), None)
-        y_train.append(max(ans['caption'], key=len)) # choose the longest caption as training label
+        y_train.append('<bos>'+max(ans['caption'], key=len)+'<eos>') # choose the longest caption as training label
 
     x_train = np.array(x_train)
 
     np.save('./data/{}'.format(flag), x_train)
     return x_train, y_train
 
-def preprocess_caps(train_caps, test_caps):
+def preprocess_caps(train_caps, test_caps, word_count_threshold):
     '''
     Wrapper of caption preprocessing
     '''
-    caps = train_caps + test_caps
-    caps += ['<bos>', '<eos>', '<pad>', '<unk>']
+    captions = train_caps + test_caps
+    captions = np.asarray(captions, dtype=np.object)
+    
+    # Filter out some common symbols in sentences
+    captions = map(lambda x: x.replace('.', ''), captions)
+    captions = map(lambda x: x.replace(',', ''), captions)
+    captions = map(lambda x: x.replace('"', ''), captions)
+    captions = map(lambda x: x.replace('\n', ''), captions)
+    captions = map(lambda x: x.replace('?', ''), captions)
+    captions = map(lambda x: x.replace('!', ''), captions)
+    captions = map(lambda x: x.replace('\\', ''), captions)
+    captions = map(lambda x: x.replace('/', ''), captions)
 
-
+    caps = captions
+    return preBuildWordVocab(caps, word_count_threshold)
 
 def preBuildWordVocab(sentence_iterator, word_count_threshold=5):
     '''
@@ -89,5 +100,49 @@ def preBuildWordVocab(sentence_iterator, word_count_threshold=5):
     np.save("./data/bias_init_vector", bias_init_vector)
     return wordtoix, ixtoword, bias_init_vector
 
+def pad_sequences(seq, maxlen=None, value=0.0, dtype='int32'):
+    '''
+    Pad seq with value to maxlen, truncate if exceed maxlen
+    Expected input: list of lists of caption word index
+    Return: np array with shape (n_samples, maxlen)
+    '''
+    if not hasattr(seq, '__len__'):
+        raise ValueError('`sequences` must be iterable.')
+        lengths = []
+        for x in seq:
+        if not hasattr(x, '__len__'):
+            raise ValueError('`sequences` must be a list of iterables. '
+                    'Found non-iterable: ' + str(x))
+        lengths.append(len(x))
+
+    n_samples = len(seq)
+    if maxlen is None:
+        maxlen = np.max(lengths)
+
+    # take the sample shape from the first non empty sequence
+    # checking for consistency in the main loop below.
+    sample_shape = tuple()
+    for s in seq:
+        if len(s) > 0:
+            sample_shape = np.asarray(s).shape[1:]
+        break
+
+    # Initialize padded array with 1 * value
+    x = (np.ones((n_samples, maxlen) + sample_shape) * value).astype(dtype)
+    for idx, s in enumerate(seq):
+        if not len(s):
+            continue  # empty list/array was found
+        trunc = s[:maxlen]
+
+    # check `trunc` has expected shape
+    trunc = np.asarray(trunc, dtype=dtype)
+    if trunc.shape[1:] != sample_shape:
+        raise ValueError('Shape of sample %s of sequence at position %s is different from expected shape %s' %
+            (trunc.shape[1:], idx, sample_shape))
+
+    # Padding
+    x[idx, :len(trunc)] = trunc
+    return x
+
 if __name__ == "__main__":
-    load_data(new=True)
+    pass
