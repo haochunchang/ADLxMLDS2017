@@ -72,46 +72,46 @@ def train(datadir):
             current_video_masks = np.ones((batch_size, n_video_lstm_step))
 
             # preprocessing captions...
-                # Filter out other symbols
-                train_caps = [all_train_caps[i] for i in range(start, end)]
-                train_caps = map(lambda x: x.replace('.', ''), train_caps)
-                train_caps = map(lambda x: x.replace(',', ''), train_caps)
-                train_caps = map(lambda x: x.replace('"', ''), train_caps)
-                train_caps = map(lambda x: x.replace('\n', ''), train_caps)
-                train_caps = map(lambda x: x.replace('?', ''), train_caps)
-                train_caps = map(lambda x: x.replace('!', ''), train_caps)
-                train_caps = map(lambda x: x.replace('\\', ''), train_caps)
-                train_caps = map(lambda x: x.replace('/', ''), train_caps)
+            # Filter out other symbols
+            train_caps = [all_train_caps[i] for i in range(start, end)]
+            train_caps = map(lambda x: x.replace('.', ''), train_caps)
+            train_caps = map(lambda x: x.replace(',', ''), train_caps)
+            train_caps = map(lambda x: x.replace('"', ''), train_caps)
+            train_caps = map(lambda x: x.replace('\n', ''), train_caps)
+            train_caps = map(lambda x: x.replace('?', ''), train_caps)
+            train_caps = map(lambda x: x.replace('!', ''), train_caps)
+            train_caps = map(lambda x: x.replace('\\', ''), train_caps)
+            train_caps = map(lambda x: x.replace('/', ''), train_caps)
 
-                # truncate caption and add <eos>
-                for ind, cap in enumerate(train_caps):
-                    words = cap.lower().split(' ')
-                    if len(words) >= n_caption_lstm_step:
-                        new_word = ''
-                        for i in range(n_caption_lstm_step-1):
-                            new_word += words[i] + ' '
-                        train_caps[ind] += new_word + '<eos>'
+            # truncate caption and add <eos>
+            for ind, cap in enumerate(train_caps):
+                words = cap.lower().split(' ')
+                if len(words) >= n_caption_lstm_step:
+                    new_word = ''
+                    for i in range(n_caption_lstm_step-1):
+                        new_word += words[i] + ' '
+                    train_caps[ind] += new_word + '<eos>'
 
-                # convert caption into word_index or <unk>
-                train_caps_index = []
-                for cap in train_caps:
-                    current_word_idx = []
-                    for word in cap.lower().split(' '):
-                        if word in wordtoix:
-                            current_word_idx.append(wordtoix[word])
-                        else:
-                            current_word_idx.append(wordtoix['<unk>'])
-                    train_caps_index.append(current_word_idx)
+            # convert caption into word_index or <unk>
+            train_caps_index = []
+            for cap in train_caps:
+                current_word_idx = []
+                for word in cap.lower().split(' '):
+                    if word in wordtoix:
+                        current_word_idx.append(wordtoix[word])
+                    else:
+                        current_word_idx.append(wordtoix['<unk>'])
+                train_caps_index.append(current_word_idx)
 
-                # pad sequences
-                train_caps_matrix = utils.pad_sequences(train_caps_index, maxlen=n_caption_lstm_step)
-                train_caps_matrix = np.hstack([train_caps_matrix, np.zeros(len(train_caps_matrix), 1)]).astype(int)
+            # pad sequences
+            train_caps_matrix = utils.pad_sequences(train_caps_index, maxlen=n_caption_lstm_step)
+            train_caps_matrix = np.hstack([train_caps_matrix, np.zeros(len(train_caps_matrix), 1)]).astype(int)
 
-                # get caption_mask where nonzero is 1
-                train_caps_masks = np.zeros((train_caps_matrix.shape[0], train_caps_matrix.shape[1]))
-                nonzeros = np.array(map(lambda x: (x != 0).sum() + 1, train_caps_matrix))
-                for ind, row in enumerate(train_caps_masks):
-                    row[:nonzeros[ind]] = 1
+            # get caption_mask where nonzero is 1
+            train_caps_masks = np.zeros((train_caps_matrix.shape[0], train_caps_matrix.shape[1]))
+            nonzeros = np.array(map(lambda x: (x != 0).sum() + 1, train_caps_matrix))
+            for ind, row in enumerate(train_caps_masks):
+                row[:nonzeros[ind]] = 1
 
             # Run session!!
             probs_val = sess.run(tf_probs, feed_dict={
