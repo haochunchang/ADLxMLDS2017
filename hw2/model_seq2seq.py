@@ -27,7 +27,7 @@ def train(datadir):
     wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 3) 
 
     # Build S2VT model
-    model = Video_Caption_Generator(
+    model = VCG.Video_Caption_Generator(
                 dim_image = dim_image,
                 n_words = len(wordtoix),
                 dim_hidden = dim_hidden,
@@ -35,18 +35,18 @@ def train(datadir):
                 n_lstm_steps = n_frame_step,
                 n_video_lstm_step = n_video_lstm_step,
                 n_caption_lstm_step = n_caption_lstm_step,
-                bias_init_vector = bias_init_vector)
+                bias_init_vector = bias_init_vec)
 
     if not isAtten:
-        tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = VCG.build_model()
+        tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
     else:
         # Attention-based not yet developed
         pass
 
     # Start session
     sess = tf.InteractiveSession()
-    with tf.variable_scope(tf.get_variable_scope(), reuse=False):
-        train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
+    #with tf.variable_scope(tf.get_variable_scope(), reuse=False):
+    train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
     tf.global_variables_initializer().run() 
     saver = tf.train.Saver()
 

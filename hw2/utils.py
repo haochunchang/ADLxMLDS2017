@@ -108,8 +108,8 @@ def pad_sequences(seq, maxlen=None, value=0.0, dtype='int32'):
     '''
     if not hasattr(seq, '__len__'):
         raise ValueError('`sequences` must be iterable.')
-        lengths = []
-        for x in seq:
+    lengths = []
+    for x in seq:
         if not hasattr(x, '__len__'):
             raise ValueError('`sequences` must be a list of iterables. '
                     'Found non-iterable: ' + str(x))
