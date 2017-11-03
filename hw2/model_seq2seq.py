@@ -46,7 +46,7 @@ def train(datadir):
     # Start session
     sess = tf.InteractiveSession()
     #with tf.variable_scope(tf.get_variable_scope(), reuse=False):
-    train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
+    train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(tf_loss)
     tf.global_variables_initializer().run() 
     saver = tf.train.Saver()
 
