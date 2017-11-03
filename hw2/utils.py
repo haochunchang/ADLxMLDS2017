@@ -23,14 +23,15 @@ def load_data(path=os.path.join('.', 'data'), flag='train'):
     x_train = []
     y_train = []
     for p in paths:       
-        x_train.append(np.load(p))
+        #x_train.append(np.load(p))
         idx = p.split('/')[-1][:-4]
         ans = next((item for item in label if item['id'] == idx), None)
         y_train.append('<bos>'+max(ans['caption'], key=len)+'<eos>') # choose the longest caption as training label
 
-    x_train = np.array(x_train)
+    #x_train = np.array(x_train)
 
-    np.save('./data/{}'.format(flag), x_train)
+    #np.save('./data/{}'.format(flag), x_train)
+    x_train = np.load('./data/{}.npy'.format(flag))
     return x_train, y_train
 
 def preprocess_caps(train_caps, test_caps, word_count_threshold):
@@ -125,7 +126,7 @@ def pad_sequences(seq, maxlen=None, value=0.0):
     for s in seq:
         if len(s) > 0:
             sample_shape = np.asarray(s).shape[1:]
-        break
+            break
 
     # Initialize padded array with 1 * value
     x = (np.ones((n_samples, maxlen) + sample_shape) * value).astype(int)

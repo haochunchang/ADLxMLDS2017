@@ -106,13 +106,11 @@ def train(datadir):
 
             # pad sequences
             train_caps_matrix = utils.pad_sequences(train_caps_index, maxlen=n_caption_lstm_step)
-            print('train_caps_matrix is {}'.format(train_caps_matrix))
-            print(train_caps_matrix.shape, type(train_caps_matrix))
-            train_caps_matrix = np.hstack([train_caps_matrix, np.zeros(len(train_caps_matrix), 1)]).astype(int)
+            train_caps_matrix = np.hstack([train_caps_matrix, np.zeros((len(train_caps_matrix), 1))]).astype(int)
 
             # get caption_mask where nonzero is 1
             train_caps_masks = np.zeros((train_caps_matrix.shape[0], train_caps_matrix.shape[1]))
-            nonzeros = np.array(map(lambda x: (x != 0).sum() + 1, train_caps_matrix))
+            nonzeros = np.array(list(map(lambda x: (x != 0).sum() + 1, train_caps_matrix)))
             for ind, row in enumerate(train_caps_masks):
                 row[:nonzeros[ind]] = 1
 
