@@ -84,17 +84,18 @@ def train(datadir):
             train_caps = map(lambda x: x.replace('/', ''), train_caps)
 
             # truncate caption and add <eos>
+            train_caps_list = list(train_caps)
             for ind, cap in enumerate(train_caps):
                 words = cap.lower().split(' ')
                 if len(words) >= n_caption_lstm_step:
                     new_word = ''
                     for i in range(n_caption_lstm_step-1):
                         new_word += words[i] + ' '
-                    train_caps[ind] += new_word + '<eos>'
+                    train_caps_list[ind] = new_word + '<eos>'
 
             # convert caption into word_index or <unk>
             train_caps_index = []
-            for cap in train_caps:
+            for cap in train_caps_list:
                 current_word_idx = []
                 for word in cap.lower().split(' '):
                     if word in wordtoix:
@@ -105,6 +106,8 @@ def train(datadir):
 
             # pad sequences
             train_caps_matrix = utils.pad_sequences(train_caps_index, maxlen=n_caption_lstm_step)
+            print('train_caps_matrix is {}'.format(train_caps_matrix))
+            print(train_caps_matrix.shape, type(train_caps_matrix))
             train_caps_matrix = np.hstack([train_caps_matrix, np.zeros(len(train_caps_matrix), 1)]).astype(int)
 
             # get caption_mask where nonzero is 1
