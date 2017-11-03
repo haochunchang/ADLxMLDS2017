@@ -100,7 +100,7 @@ def preBuildWordVocab(sentence_iterator, word_count_threshold=5):
     np.save("./data/bias_init_vector", bias_init_vector)
     return wordtoix, ixtoword, bias_init_vector
 
-def pad_sequences(seq, maxlen=None, value=0.0, dtype='int32'):
+def pad_sequences(seq, maxlen=None, value=0.0):
     '''
     Pad seq with value to maxlen, truncate if exceed maxlen
     Expected input: list of lists of caption word index
@@ -128,20 +128,21 @@ def pad_sequences(seq, maxlen=None, value=0.0, dtype='int32'):
         break
 
     # Initialize padded array with 1 * value
-    x = (np.ones((n_samples, maxlen) + sample_shape) * value).astype(dtype)
+    x = (np.ones((n_samples, maxlen) + sample_shape) * value).astype(int)
     for idx, s in enumerate(seq):
         if not len(s):
             continue  # empty list/array was found
         trunc = s[:maxlen]
 
-    # check `trunc` has expected shape
-    trunc = np.asarray(trunc, dtype=dtype)
-    if trunc.shape[1:] != sample_shape:
-        raise ValueError('Shape of sample %s of sequence at position %s is different from expected shape %s' %
-            (trunc.shape[1:], idx, sample_shape))
+        # check `trunc` has expected shape
+        trunc = np.asarray(trunc, dtype=int)
+        if trunc.shape[1:] != sample_shape:
+            raise ValueError('Shape of sample %s of sequence at position %s is different from expected shape %s' %
+                (trunc.shape[1:], idx, sample_shape))
 
-    # Padding
-    x[idx, :len(trunc)] = trunc
+        # Padding
+        x[idx, :len(trunc)] = trunc
+    
     return x
 
 if __name__ == "__main__":
