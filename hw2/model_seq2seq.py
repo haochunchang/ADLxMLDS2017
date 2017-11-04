@@ -11,12 +11,12 @@ def train(datadir):
     # Declare some parameters for tuning and experiment
     isAtten = False # True for attention-based
     dim_image = 4096
-    dim_hidden = 500
-    batch_size = 128
+    dim_hidden = 1000
+    batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
-    n_epochs = 200
+    n_epochs = 2000
     learning_rate = 0.001
 
     # get training and testing data
@@ -24,7 +24,7 @@ def train(datadir):
     x_test, all_test_caps = utils.load_data(datadir, flag='test')
 
     # Preprocess captions
-    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 3) 
+    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 5) 
 
     # Build S2VT model
     model = VCG.Video_Caption_Generator(
@@ -129,7 +129,7 @@ def train(datadir):
                             })
 
             # Print out loss and time
-            print('idx: ', start, " Epoch: ", epoch, " loss: ", loss_val, ' Elapsed time: ', str((time.time() - start_time)))
+        print(" Epoch: ", epoch, " loss: ", loss_val, ' Elapsed time: ', str((time.time() - start_time)))
     
         # save model every k epochs
         if np.mod(epoch, 10) == 0:
