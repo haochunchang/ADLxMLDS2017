@@ -11,7 +11,8 @@ class Video_Caption_Generator():
         self.n_video_lstm_step = n_video_lstm_step
         self.n_caption_lstm_step = n_caption_lstm_step
     
-        self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
+        with tf.device("/cpu:0"):
+            self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
 
         self.lstm1 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=False)
         self.lstm2 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=False)
@@ -60,8 +61,8 @@ class Video_Caption_Generator():
             if i == 0:
                 current_embed = tf.zeros([self.batch_size, self.dim_hidden])
             else:
-            #with tf.device("/cpu:0"):
-                current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
+                with tf.device("/cpu:0"):
+                    current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
 
             tf.get_variable_scope().reuse_variables()
 
@@ -117,8 +118,8 @@ class Video_Caption_Generator():
             tf.get_variable_scope().reuse_variables()
 
             if i == 0:
-                #with tf.device('/cpu:0'):
-                current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
+                with tf.device('/cpu:0'):
+                    current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
 
             with tf.variable_scope("LSTM1"):
                 output1, state1 = self.lstm1(padding, state1)

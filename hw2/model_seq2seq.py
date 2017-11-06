@@ -11,8 +11,8 @@ def train(datadir):
     # Declare some parameters for tuning and experiment
     isAtten = False # True for attention-based
     dim_image = 4096
-    dim_hidden = 500
-    batch_size = 128
+    dim_hidden = 256
+    batch_size = 32
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
@@ -24,7 +24,7 @@ def train(datadir):
     x_test, all_test_caps = utils.load_data(datadir, flag='test')
 
     # Preprocess captions
-    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 3) 
+    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 1) 
 
     # Build S2VT model
     model = VCG.Video_Caption_Generator(
@@ -45,8 +45,8 @@ def train(datadir):
 
     # Start session
     sess = tf.InteractiveSession()
-    #with tf.variable_scope(tf.get_variable_scope(), reuse=False):
-    train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(tf_loss)
+    with tf.variable_scope(tf.get_variable_scope(), reuse=False):
+        train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
     tf.global_variables_initializer().run() 
     saver = tf.train.Saver()
 
@@ -60,12 +60,12 @@ def train(datadir):
         x_train = x_train[index, :, :]
         y_train = [all_train_caps[i] for i in index]
 
+        start_time = time.time()
         # and for each batch...
         for start, end in zip(
             range(0, n_sample, batch_size), 
             range(batch_size, n_sample, batch_size)
         ):
-            start_time = time.time()
             
             # preprocessing features
             current_feats = x_train[start:end]
@@ -128,8 +128,8 @@ def train(datadir):
                                 tf_caption_mask: train_caps_masks
                             })
 
-            # Print out loss and time
-            print('idx: ', start, " Epoch: ", epoch, " loss: ", loss_val, ' Elapsed time: ', str((time.time() - start_time)))
+        # Print out loss and time
+        print('idx: ', start, " Epoch: ", epoch, " loss: ", loss_val, ' Elapsed time: ', str((time.time() - start_time)))
     
         # save model every k epochs
         if np.mod(epoch, 10) == 0:
