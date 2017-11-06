@@ -1,23 +1,23 @@
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-import os, sys
+import sys, json
 import utils
 import VCG_model as VCG
-import json
+from os import listdir
+from os.path import join, isfile
 
 def test(model_path='./', datadir='./data'):
 
     dim_image = 4096
-    dim_hidden = 256
-
+    dim_hidden = 512
+    batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
-
-    batch_size = 32
-
-    test_videos = open(os.path.join(datadir, 'testing_id.txt'), 'r').read().split('\n')[:-1]
+    #===================================================
+    video_path = join(path, 'testing_data', 'feat')
+    test_videos = [f for f in listdir(video_path) if isfile(join(video_path, f))]
 
     ixtoword = pd.Series(np.load(os.path.join(datadir, 'ixtoword.npy')).tolist())
 
@@ -74,5 +74,5 @@ def test(model_path='./', datadir='./data'):
     captions.to_csv('captions.csv', index=False, header=False)
 
 if __name__ == "__main__":
-    test(model_path='./models-490', datadir=sys.argv[1])
+    test(model_path=sys.argv[2], datadir=sys.argv[1])
 

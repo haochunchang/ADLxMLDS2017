@@ -11,22 +11,17 @@ def train(datadir):
     # Declare some parameters for tuning and experiment
     isAtten = False # True for attention-based
     dim_image = 4096
-    dim_hidden = 256
-    batch_size = 32
+    dim_hidden = 512
+    batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
-    n_epochs = 200
+    n_epochs = 500
     learning_rate = 0.001
 
     # get training and testing data
-    train_corpus = utils.load_data(datadir, flag='train')
-    x_train = np.array([i for i in train_corpus['feat'].values])
-    all_train_caps = train_corpus['caption'].values
-
-    test_corpus = utils.load_data(datadir, flag='test')
-    x_test = np.array([i for i in test_corpus['feat'].values])
-    all_test_caps = test_corpus['caption'].values
+    x_train, all_train_caps = utils.load_data(datadir, flag='train')
+    x_test, all_test_caps = utils.load_data(datadir, flag='test')
     
     # Preprocess captions
     wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 1) 

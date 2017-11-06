@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-import os, sys, json, pickle
-import glob
-from keras.preprocessing import text
+import sys, json, pickle
+from os import listdir
+from os.path import join, isfile
 
-def load_data(path=os.path.join('.', 'data'), flag='train'):
+def load_data(path=join('.', 'data'), flag='train'):
     '''
     Return (training_data, training_label) or (testing_data, testing_label)
     training_data: (n_samples, n_frames, n_features)
@@ -14,26 +14,27 @@ def load_data(path=os.path.join('.', 'data'), flag='train'):
         raise 'Usage: load_data(path, flag=train or test)'
 
     # Load in data and label
-    with open(os.path.join(path, '{}ing_label.json'.format(flag)), 'r') as j:
+    with open(join(path, '{}ing_label.json'.format(flag)), 'r') as j:
         label = json.load(j)
-        path = os.path.join(path, '{}ing_data'.format(flag), 'feat')
-
-    paths = sorted(glob.glob(os.path.join(path, '*.avi.npy')), key=lambda x: x[0])
-
+    video_path = join(path, '{}ing_data'.format(flag), 'feat')
+    paths = [f for f in listdir(video_path) if isfile(join(video_path, f))]
+    
     x_train = []
     y_train = []
-    for p in paths:       
+    index_lst = []
+    for p in paths:
         x_train.append(np.load(p))
         idx = p.split('/')[-1][:-4]
+        index_lst.append(idx)
         ans = next((item for item in label if item['id'] == idx), None)
         y_train.append('<bos>'+max(ans['caption'], key=len)+'<eos>') # choose the longest caption as training label
 
-    corpus = pd.DataFrame()
-    corpus['feat'] = np.array(x_train)
-    corpus['caption'] = y_train
+    x_train = np.array(x_train)
+    np.save(os.path.join(path, 'x_{}'.format(flag)), x_train)
+    with open(os.path.join(path, 'y_{}.pkl'.format(flag), 'wb') as p:
+        pickle.dump(p, (y_train, index_lst))
 
-    corpus.to_csv('{}_video_corpus.csv'.format(flag), index=False)
-    return corpus
+    return x_train, y_train     
 
 def preprocess_caps(train_caps, test_caps, word_count_threshold):
     '''
