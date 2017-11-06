@@ -20,9 +20,14 @@ def train(datadir):
     learning_rate = 0.001
 
     # get training and testing data
-    x_train, all_train_caps = utils.load_data(datadir, flag='train')
-    x_test, all_test_caps = utils.load_data(datadir, flag='test')
+    train_corpus = utils.load_data(datadir, flag='train')
+    x_train = np.array([i for i in train_corpus['feat'].values])
+    all_train_caps = train_corpus['caption'].values
 
+    test_corpus = utils.load_data(datadir, flag='test')
+    x_test = np.array([i for i in test_corpus['feat'].values])
+    all_test_caps = test_corpus['caption'].values
+    
     # Preprocess captions
     wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 1) 
 
