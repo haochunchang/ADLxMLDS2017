@@ -74,6 +74,7 @@ def train(datadir):
             # preprocessing captions...
             # Filter out other symbols
             train_caps = [y_train[i] for i in range(start, end)]
+            train_caps = map(lambda x: '<bos> '+x, train_caps)
             train_caps = map(lambda x: x.replace('.', ''), train_caps)
             train_caps = map(lambda x: x.replace(',', ''), train_caps)
             train_caps = map(lambda x: x.replace('"', ''), train_caps)
@@ -92,6 +93,8 @@ def train(datadir):
                     for i in range(n_caption_lstm_step-1):
                         new_word += words[i] + ' '
                     train_caps_list[ind] = new_word + '<eos>'
+                else:
+                    train_caps_list[ind] = train_caps_list[ind] + ' <eos>'
 
             # convert caption into word_index or <unk>
             train_caps_index = []
