@@ -20,11 +20,11 @@ def train(datadir):
     learning_rate = 0.001
 
     # get training and testing data
-    x_train, y_train = utils.load_data(datadir, flag='train')
+    x_train, all_train_caps = utils.load_data(datadir, flag='train')
     x_test, all_test_caps = utils.load_data(datadir, flag='test')
     
     # Preprocess captions
-    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(y_train, all_test_caps, 1) 
+    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 1) 
 
     # Build S2VT model
     model = VCG.Video_Caption_Generator(
@@ -58,7 +58,7 @@ def train(datadir):
         # Suffle index before getting training batches
         np.random.shuffle(index)
         x_train = x_train[index, :, :]
-        y_train = [y_train[i] for i in index]
+        y_train = [max(all_train_caps[i], key=len) for i in index]
 
         start_time = time.time()
         # and for each batch...

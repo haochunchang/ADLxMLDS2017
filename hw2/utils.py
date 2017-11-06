@@ -41,19 +41,21 @@ def preprocess_caps(train_caps, test_caps, word_count_threshold):
     Wrapper of caption preprocessing
     '''
     captions = train_caps + test_caps
-    captions = np.asarray(captions, dtype=np.object)
+    all_captions = np.asarray(captions, dtype=np.object)
     
     # Filter out some common symbols in sentences
-    captions = map(lambda x: x.replace('.', ''), captions)
-    captions = map(lambda x: x.replace(',', ''), captions)
-    captions = map(lambda x: x.replace('"', ''), captions)
-    captions = map(lambda x: x.replace('\n', ''), captions)
-    captions = map(lambda x: x.replace('?', ''), captions)
-    captions = map(lambda x: x.replace('!', ''), captions)
-    captions = map(lambda x: x.replace('\\', ''), captions)
-    captions = map(lambda x: x.replace('/', ''), captions)
-
-    caps = captions
+    caps = []
+    for captions in all_captions:
+        captions = map(lambda x: x.replace('.', ''), captions)
+        captions = map(lambda x: x.replace(',', ''), captions)
+        captions = map(lambda x: x.replace('"', ''), captions)
+        captions = map(lambda x: x.replace('\n', ''), captions)
+        captions = map(lambda x: x.replace('?', ''), captions)
+        captions = map(lambda x: x.replace('!', ''), captions)
+        captions = map(lambda x: x.replace('\\', ''), captions)
+        captions = map(lambda x: x.replace('/', ''), captions)
+        caps.append(captions)
+    
     return preBuildWordVocab(caps, word_count_threshold)
 
 def preBuildWordVocab(sentence_iterator, word_count_threshold=5):
@@ -65,11 +67,12 @@ def preBuildWordVocab(sentence_iterator, word_count_threshold=5):
     print('preprocessing word counts and creating vocab based on word count threshold %d' % (word_count_threshold))
     word_counts = {}
     nsents = 0
-    for sent in sentence_iterator:
-        nsents += 1
-        for w in sent.lower().split(' '):
-            word_counts[w] = word_counts.get(w, 0) + 1
-            vocab = [w for w in word_counts if word_counts[w] >= word_count_threshold]
+    for sents in sentence_iterator:
+        for sent in sents:
+            nsents += 1
+            for w in sent.lower().split(' '):
+                word_counts[w] = word_counts.get(w, 0) + 1
+                vocab = [w for w in word_counts if word_counts[w] >= word_count_threshold]
     print('filtered words from %d to %d' % (len(word_counts), len(vocab)))
 
     ixtoword = {}
