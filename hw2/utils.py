@@ -32,7 +32,7 @@ def load_data(path=join('.', 'data'), flag='train'):
     x_train = np.array(x_train)
     np.save(join(path, 'x_{}'.format(flag)), x_train)
     with open(join(path, 'y_{}.pkl'.format(flag)), 'wb') as p:
-        pickle.dump(p, (y_train, index_lst))
+        pickle.dump((y_train, index_lst), p)
 
     return x_train, y_train     
 
