@@ -20,11 +20,11 @@ def train(datadir):
     learning_rate = 0.001
 
     # get training and testing data
-    x_train, all_train_caps = utils.load_data(datadir, flag='train')
+    x_train, y_train = utils.load_data(datadir, flag='train')
     x_test, all_test_caps = utils.load_data(datadir, flag='test')
     
     # Preprocess captions
-    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 1) 
+    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(y_train, all_test_caps, 1) 
 
     # Build S2VT model
     model = VCG.Video_Caption_Generator(
@@ -35,7 +35,7 @@ def train(datadir):
                 n_lstm_steps = n_frame_step,
                 n_video_lstm_step = n_video_lstm_step,
                 n_caption_lstm_step = n_caption_lstm_step,
-                bias_init_vector = bias_init_vec)
+                bias_init_vector = None)
 
     if not isAtten:
         tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
@@ -49,16 +49,16 @@ def train(datadir):
         train_op = tf.train.AdamOptimizer(learning_rate).minimize(tf_loss)
     tf.global_variables_initializer().run() 
     saver = tf.train.Saver()
-
+    
+    n_sample = x_train.shape[0]
+    index = np.arange(n_sample)
     # For each epoch, get data batches
     for epoch in range(0, n_epochs):
 
         # Suffle index before getting training batches
-        n_sample = x_train.shape[0]
-        index = np.arange(n_sample)
         np.random.shuffle(index)
         x_train = x_train[index, :, :]
-        y_train = [all_train_caps[i] for i in index]
+        y_train = [y_train[i] for i in index]
 
         start_time = time.time()
         # and for each batch...
