@@ -46,13 +46,15 @@ class Video_Caption_Generator():
 
         ######  Encoding Stage ############
         for i in range(0, self.n_video_lstm_step):
-            if i > 0:
-                tf.get_variable_scope().reuse_variables()
-
             with tf.variable_scope("LSTM1"):
+                if i > 0:
+                   tf.get_variable_scope().reuse_variables()
                 output1, state1 = self.lstm1(image_emb[:,i,:], state1)
 
             with tf.variable_scope("LSTM2"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
+
                 output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
 
         ####### Decoding Stage #############
@@ -64,12 +66,12 @@ class Video_Caption_Generator():
                 with tf.device("/cpu:0"):
                     current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
 
-            tf.get_variable_scope().reuse_variables()
-
             with tf.variable_scope("LSTM1"):
+                tf.get_variable_scope().reuse_variables()
                 output1, state1 = self.lstm1(padding, state1)
 
             with tf.variable_scope("LSTM2"):
+                tf.get_variable_scope().reuse_variables()
                 output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
 
             labels = tf.expand_dims(caption[:, i+1], 1)
@@ -105,26 +107,28 @@ class Video_Caption_Generator():
         embeds = []
 
         for i in range(0, self.n_video_lstm_step):
-            if i > 0:
-                tf.get_variable_scope().reuse_variables()
-
             with tf.variable_scope("LSTM1"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
                 output1, state1 = self.lstm1(image_emb[:, i, :], state1)
 
             with tf.variable_scope("LSTM2"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
                 output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
 
         for i in range(0, self.n_caption_lstm_step):
-            tf.get_variable_scope().reuse_variables()
 
             if i == 0:
                 with tf.device('/cpu:0'):
                     current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
 
             with tf.variable_scope("LSTM1"):
+                tf.get_variable_scope().reuse_variables()
                 output1, state1 = self.lstm1(padding, state1)
 
             with tf.variable_scope("LSTM2"):
+                tf.get_variable_scope().reuse_variables()
                 output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
