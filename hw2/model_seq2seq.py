@@ -73,7 +73,7 @@ def train(datadir):
 
             # preprocessing captions...
             # Filter out other symbols
-            train_caps = [all_train_caps[i] for i in range(start, end)]
+            train_caps = [y_train[i] for i in range(start, end)]
             train_caps = map(lambda x: x.replace('.', ''), train_caps)
             train_caps = map(lambda x: x.replace(',', ''), train_caps)
             train_caps = map(lambda x: x.replace('"', ''), train_caps)
