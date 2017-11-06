@@ -24,7 +24,7 @@ def train(datadir):
     x_test, all_test_caps = utils.load_data(datadir, flag='test')
     
     # Preprocess captions
-    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, all_test_caps, 1) 
+    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, None, 1) 
 
     # Build S2VT model
     model = VCG.Video_Caption_Generator(

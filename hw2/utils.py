@@ -40,7 +40,10 @@ def preprocess_caps(train_caps, test_caps, word_count_threshold):
     '''
     Wrapper of caption preprocessing
     '''
-    captions = train_caps + test_caps
+    if test_caps != None:
+        captions = train_caps + test_caps
+    else:
+        captions = train_caps
     all_captions = np.asarray(captions, dtype=np.object)
     
     # Filter out some common symbols in sentences
