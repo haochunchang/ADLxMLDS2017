@@ -27,7 +27,7 @@ def load_data(path=join('.', 'data'), flag='train'):
         idx = p.split('/')[-1][:-4]
         index_lst.append(idx)
         ans = next((item for item in label if item['id'] == idx), None)
-        y_train.append(max(ans['caption'], key=len)) # choose the longest caption as training label
+        y_train.append(ans['caption']) # choose the longest caption as training label
 
     x_train = np.array(x_train)
     np.save(join(path, 'x_{}'.format(flag)), x_train)
