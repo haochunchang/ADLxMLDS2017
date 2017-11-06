@@ -10,7 +10,7 @@ from os.path import join, isfile
 def test(model_path='./', datadir='./data'):
 
     dim_image = 4096
-    dim_hidden = 512
+    dim_hidden = 256
     batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20

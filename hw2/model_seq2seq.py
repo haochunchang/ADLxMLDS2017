@@ -11,12 +11,12 @@ def train(datadir):
     # Declare some parameters for tuning and experiment
     isAtten = False # True for attention-based
     dim_image = 4096
-    dim_hidden = 512
+    dim_hidden = 256
     batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
-    n_epochs = 500
+    n_epochs = 200
     learning_rate = 0.001
 
     # get training and testing data
