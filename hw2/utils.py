@@ -23,16 +23,17 @@ def load_data(path=os.path.join('.', 'data'), flag='train'):
     x_train = []
     y_train = []
     for p in paths:       
-        #x_train.append(np.load(p))
+        x_train.append(np.load(p))
         idx = p.split('/')[-1][:-4]
         ans = next((item for item in label if item['id'] == idx), None)
         y_train.append('<bos>'+max(ans['caption'], key=len)+'<eos>') # choose the longest caption as training label
 
-    #x_train = np.array(x_train)
+    corpus = pd.DataFrame()
+    corpus['feat'] = np.array(x_train)
+    corpus['caption'] = y_train
 
-    #np.save('./data/{}'.format(flag), x_train)
-    x_train = np.load('./data/{}.npy'.format(flag))
-    return x_train, y_train
+    corpus.to_csv('{}_video_corpus.csv'.format(flag), index=False)
+    return corpus
 
 def preprocess_caps(train_caps, test_caps, word_count_threshold):
     '''
@@ -147,4 +148,6 @@ def pad_sequences(seq, maxlen=None, value=0.0):
     return x
 
 if __name__ == "__main__":
-    pass
+    datadir='./data'
+    corpus = load_data(datadir, flag='train')
+    print(corpus)

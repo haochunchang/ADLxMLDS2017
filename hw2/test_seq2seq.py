@@ -9,17 +9,15 @@ import json
 def test(model_path='./', datadir='./data'):
 
     dim_image = 4096
-    dim_hidden = 1000
+    dim_hidden = 256
 
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
 
-    batch_size = 128
+    batch_size = 32
 
     test_videos = open(os.path.join(datadir, 'testing_id.txt'), 'r').read().split('\n')[:-1]
-    with open(os.path.join(datadir, 'testing_label.json')) as data_file:
-        test_labels = json.load(data_file)
 
     ixtoword = pd.Series(np.load(os.path.join(datadir, 'ixtoword.npy')).tolist())
 

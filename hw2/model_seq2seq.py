@@ -135,6 +135,9 @@ def train(datadir):
         if np.mod(epoch, 10) == 0:
             print("Saving the model of epoch{}...".format(epoch))
             saver.save(sess, './models', global_step=epoch)
+    print("Saving the model of epoch{}...".format(epoch))
+    saver.save(sess, './models', global_step=epoch)
+
 
 if __name__ == "__main__":
     train(sys.argv[1])
