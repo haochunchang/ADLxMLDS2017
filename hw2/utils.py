@@ -23,7 +23,7 @@ def load_data(path=join('.', 'data'), flag='train'):
     y_train = []
     index_lst = []
     for p in paths:
-        x_train.append(np.load(p))
+        x_train.append(np.load(join(video_path, p)))
         idx = p.split('/')[-1][:-4]
         index_lst.append(idx)
         ans = next((item for item in label if item['id'] == idx), None)
@@ -31,7 +31,7 @@ def load_data(path=join('.', 'data'), flag='train'):
 
     x_train = np.array(x_train)
     np.save(os.path.join(path, 'x_{}'.format(flag)), x_train)
-    with open(os.path.join(path, 'y_{}.pkl'.format(flag), 'wb') as p:
+    with open(os.path.join(path, 'y_{}.pkl'.format(flag)), 'wb') as p:
         pickle.dump(p, (y_train, index_lst))
 
     return x_train, y_train     
