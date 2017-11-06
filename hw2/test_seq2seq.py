@@ -16,7 +16,7 @@ def test(model_path='./', datadir='./data'):
     n_caption_lstm_step = 20
     n_frame_step = 80
     #===================================================
-    video_path = join(path, 'testing_data', 'feat')
+    video_path = join(datadir, 'testing_data', 'feat')
     test_videos = [f for f in listdir(video_path) if isfile(join(video_path, f))]
 
     ixtoword = pd.Series(np.load(join(datadir, 'ixtoword.npy')).tolist())
@@ -55,9 +55,10 @@ def test(model_path='./', datadir='./data'):
 
         generated_word_index = sess.run(caption_tf, feed_dict={video_tf: video_feat, video_mask_tf: video_mask})
         generated_words = ixtoword[generated_word_index]
-        print('generated_words: {}'.format(generated_words))
-        punctuation = np.argmax(np.array(generated_words) == '<eos>') + 1
-        generated_words = generated_words[:punctuation] 
+        punctuation = np.argmax(np.array(generated_words) == '<pad>')
+        if punctuation > 0:
+            generated_words = generated_words[:punctuation] 
+        
         generated_sentence = ' '.join(generated_words)
         generated_sentence = generated_sentence.replace('<bos> ', '')
         generated_sentence = generated_sentence.replace(' <eos>', '')
@@ -65,7 +66,7 @@ def test(model_path='./', datadir='./data'):
         print('generated_sentence =>', generated_sentence)
  
         generated_sentences.append(generated_sentence)
-        index.append(video)
+        index.append('.'.join(video.split('.')[:-1]))
 
     captions = pd.DataFrame()
     captions['id'] = index
