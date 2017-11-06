@@ -20,7 +20,7 @@ def test(model_path='./', datadir='./data'):
     test_videos = [f for f in listdir(video_path) if isfile(join(video_path, f))]
 
     ixtoword = pd.Series(np.load(join(datadir, 'ixtoword.npy')).tolist())
-
+    
     bias_init_vector = np.load(join(datadir, 'bias_init_vector.npy'))
 
     model = VCG.Video_Caption_Generator(
@@ -46,7 +46,7 @@ def test(model_path='./', datadir='./data'):
     for idx, video in enumerate(test_videos):
         print('video =>', video)
 
-        video_feat_path = join(datadir, 'testing_data', 'feat', video) + '.npy'
+        video_feat_path = join(datadir, 'testing_data', 'feat', video)
         video_feat = np.load(video_feat_path)[None,...]
         if video_feat.shape[1] == n_frame_step:
             video_mask = np.ones((video_feat.shape[0], video_feat.shape[1]))
@@ -54,7 +54,6 @@ def test(model_path='./', datadir='./data'):
             continue
 
         generated_word_index = sess.run(caption_tf, feed_dict={video_tf: video_feat, video_mask_tf: video_mask})
-        print('generated_word_index: {}'.format(generated_word_index))
         generated_words = ixtoword[generated_word_index]
         print('generated_words: {}'.format(generated_words))
         punctuation = np.argmax(np.array(generated_words) == '<eos>') + 1
@@ -64,8 +63,7 @@ def test(model_path='./', datadir='./data'):
         generated_sentence = generated_sentence.replace(' <eos>', '')
 
         print('generated_sentence =>', generated_sentence)
-
-        
+ 
         generated_sentences.append(generated_sentence)
         index.append(video)
 
