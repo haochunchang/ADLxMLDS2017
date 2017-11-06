@@ -35,7 +35,7 @@ def train(datadir):
                 n_lstm_steps = n_frame_step,
                 n_video_lstm_step = n_video_lstm_step,
                 n_caption_lstm_step = n_caption_lstm_step,
-                bias_init_vector = None)
+                bias_init_vector = bias_init_vec)
 
     if not isAtten:
         tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
@@ -74,7 +74,7 @@ def train(datadir):
             # preprocessing captions...
             # Filter out other symbols
             train_caps = [y_train[i] for i in range(start, end)]
-            train_caps = map(lambda x: '<bos> '+x, train_caps)
+            train_caps = map(lambda x: '<bos> '+x, train_caps) 
             train_caps = map(lambda x: x.replace('.', ''), train_caps)
             train_caps = map(lambda x: x.replace(',', ''), train_caps)
             train_caps = map(lambda x: x.replace('"', ''), train_caps)
