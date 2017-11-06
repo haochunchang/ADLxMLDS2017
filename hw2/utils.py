@@ -30,8 +30,8 @@ def load_data(path=join('.', 'data'), flag='train'):
         y_train.append('<bos> '+max(ans['caption'], key=len)+' <eos>') # choose the longest caption as training label
 
     x_train = np.array(x_train)
-    np.save(os.path.join(path, 'x_{}'.format(flag)), x_train)
-    with open(os.path.join(path, 'y_{}.pkl'.format(flag)), 'wb') as p:
+    np.save(join(path, 'x_{}'.format(flag)), x_train)
+    with open(join(path, 'y_{}.pkl'.format(flag)), 'wb') as p:
         pickle.dump(p, (y_train, index_lst))
 
     return x_train, y_train     
