@@ -71,8 +71,8 @@ def preBuildWordVocab(sentence_iterator, word_count_threshold=5):
     word_counts = {}
     nsents = 0
     for sents in sentence_iterator:
+        nsents += 1
         for sent in sents:
-            nsents += 1
             for w in sent.lower().split(' '):
                 word_counts[w] = word_counts.get(w, 0) + 1
                 vocab = [w for w in word_counts if word_counts[w] >= word_count_threshold]

@@ -10,7 +10,7 @@ from os.path import join, isfile
 def test(model_path='./', datadir='./data'):
 
     dim_image = 4096
-    dim_hidden = 256
+    dim_hidden = 512
     batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
@@ -60,6 +60,7 @@ def test(model_path='./', datadir='./data'):
             generated_words = generated_words[:punctuation] 
         
         generated_sentence = ' '.join(generated_words)
+        generated_sentence = generated_sentence.replace('<unk> ', '')       
         generated_sentence = generated_sentence.replace('<bos> ', '')
         generated_sentence = generated_sentence.replace(' <eos>', '')
 
