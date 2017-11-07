@@ -7,7 +7,7 @@ import VCG_model as VCG
 from os import listdir
 from os.path import join, isfile
 
-def test(model_path='./', datadir='./data'):
+def test(model_path='./', datadir='./data', outfilepath='captions.csv', peer='peer.csv'):
 
     dim_image = 4096
     dim_hidden = 512
@@ -73,8 +73,8 @@ def test(model_path='./', datadir='./data'):
     captions = pd.DataFrame()
     captions['id'] = index
     captions['captions'] = generated_sentences
-    captions.to_csv('captions.csv', index=False, header=False)
+    captions.to_csv(outfilepath, index=False, header=False)
 
 if __name__ == "__main__":
-    test(model_path=sys.argv[2], datadir=sys.argv[1])
+    test(model_path=sys.argv[2], datadir=sys.argv[1], outfilepath=sys.argv[3], peer=sys.argv[4])
 
