@@ -2,7 +2,7 @@
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-import os, sys, time
+import os, sys, time, random
 import utils
 import VCG_model as VCG
 
@@ -11,12 +11,12 @@ def train(datadir):
     # Declare some parameters for tuning and experiment
     isAtten = False # True for attention-based
     dim_image = 4096
-    dim_hidden = 512
+    dim_hidden = 256
     batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
-    n_epochs = 500
+    n_epochs = 200
     learning_rate = 0.001
 
     # get training and testing data
@@ -52,14 +52,14 @@ def train(datadir):
     
     n_sample = x_train.shape[0]
     index = np.arange(n_sample)
-    y_train = [max(cap, key=len) for cap in all_train_caps]
+    y_train = all_train_caps
     # For each epoch, get data batches
     for epoch in range(0, n_epochs):
 
         # Suffle index before getting training batches
         np.random.shuffle(index)
         x_train = x_train[index, :, :]
-        y_train = [y_train[i] for i in index]
+        y_train = [random.choice(y_train[i]) for i in index]
 
         start_time = time.time()
         # and for each batch...
