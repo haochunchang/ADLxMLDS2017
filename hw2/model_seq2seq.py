@@ -11,12 +11,12 @@ def train(datadir):
     # Declare some parameters for tuning and experiment
     isAtten = False # True for attention-based
     dim_image = 4096
-    dim_hidden = 256
+    dim_hidden = 512
     batch_size = 50
     n_video_lstm_step = 80
     n_caption_lstm_step = 20
     n_frame_step = 80
-    n_epochs = 200
+    n_epochs = 500
     learning_rate = 0.001
 
     # get training and testing data
@@ -24,7 +24,7 @@ def train(datadir):
     x_test, all_test_caps = utils.load_data(datadir, flag='test')
     
     # Preprocess captions
-    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, None, 2) 
+    wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, None, 1) 
 
     # Build S2VT model
     model = VCG.Video_Caption_Generator(
@@ -35,7 +35,7 @@ def train(datadir):
                 n_lstm_steps = n_frame_step,
                 n_video_lstm_step = n_video_lstm_step,
                 n_caption_lstm_step = n_caption_lstm_step,
-                bias_init_vector = None)
+                bias_init_vector = bias_init_vec)
 
     if not isAtten:
         tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
@@ -59,7 +59,8 @@ def train(datadir):
         # Suffle index before getting training batches
         np.random.shuffle(index)
         x_train = x_train[index, :, :]
-        y_train = [random.choice(y_train[i]) for i in index]
+        y_train = [y_train[i] for i in index]
+        caps = [random.choice(c) for c in y_train]
 
         start_time = time.time()
         # and for each batch...
@@ -74,7 +75,7 @@ def train(datadir):
 
             # preprocessing captions...
             # Filter out other symbols
-            train_caps = [y_train[i] for i in range(start, end)]
+            train_caps = [caps[i] for i in range(start, end)]
             train_caps = map(lambda x: '<bos> '+x, train_caps) 
             train_caps = map(lambda x: x.replace('.', ''), train_caps)
             train_caps = map(lambda x: x.replace(',', ''), train_caps)
@@ -114,7 +115,7 @@ def train(datadir):
 
             # get caption_mask where nonzero is 1
             train_caps_masks = np.zeros((train_caps_matrix.shape[0], train_caps_matrix.shape[1]))
-            nonzeros = np.array(list(map(lambda x: (x != 0).sum() + 1, train_caps_matrix))) # +1? it will keep an extra zero
+            nonzeros = np.array(list(map(lambda x: (x != 0).sum(), train_caps_matrix))) # +1? it will keep an extra zero
             for ind, row in enumerate(train_caps_masks):
                 row[:nonzeros[ind]] = 1
 
