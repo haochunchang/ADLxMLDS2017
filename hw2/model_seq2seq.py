@@ -4,12 +4,10 @@ import pandas as pd
 import numpy as np
 import os, sys, time, random
 import utils
-import VCG_model as VCG
 
-def train(datadir):
+def train(datadir, isAtten=False):
 
     # Declare some parameters for tuning and experiment
-    isAtten = False # True for attention-based
     dim_image = 4096
     dim_hidden = 512
     batch_size = 50
@@ -26,23 +24,35 @@ def train(datadir):
     # Preprocess captions
     wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, None, 1) 
 
-    # Build S2VT model
-    model = VCG.Video_Caption_Generator(
-                dim_image = dim_image,
-                n_words = len(wordtoix),
-                dim_hidden = dim_hidden,
-                batch_size = batch_size,
-                n_lstm_steps = n_frame_step,
-                n_video_lstm_step = n_video_lstm_step,
-                n_caption_lstm_step = n_caption_lstm_step,
-                bias_init_vector = bias_init_vec)
-
     if not isAtten:
+        import VCG_model as VCG
+        # Build S2VT model
+        model = VCG.Video_Caption_Generator(
+                    dim_image = dim_image,
+                    n_words = len(wordtoix),
+                    dim_hidden = dim_hidden,
+                    batch_size = batch_size,
+                    n_lstm_steps = n_frame_step,
+                    n_video_lstm_step = n_video_lstm_step,
+                    n_caption_lstm_step = n_caption_lstm_step,
+                    bias_init_vector = bias_init_vec)
+
         tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
     else:
-        # Attention-based not yet developed
-        pass
+        import VCG_atten_model as VCG 
+        # Build S2VT attention model
+        model = VCG.Video_Caption_Generator(
+                    dim_image = dim_image,
+                    n_words = len(wordtoix),
+                    dim_hidden = dim_hidden,
+                    batch_size = batch_size,
+                    n_lstm_steps = n_frame_step,
+                    n_video_lstm_step = n_video_lstm_step,
+                    n_caption_lstm_step = n_caption_lstm_step,
+                    bias_init_vector = bias_init_vec)
 
+        tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
+     
     # Start session
     sess = tf.InteractiveSession()
     with tf.variable_scope(tf.get_variable_scope(), reuse=False):
@@ -145,4 +155,7 @@ def train(datadir):
 
 
 if __name__ == "__main__":
-    train(sys.argv[1])
+    if len(sys.argv) > 2:
+        train(sys.argv[1], sys.argv[2])
+    else:
+        train(sys.argv[1])
