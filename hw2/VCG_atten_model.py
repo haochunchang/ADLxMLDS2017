@@ -84,7 +84,7 @@ class Video_Caption_Generator():
 
             # current_embed --> (attention matrix) --> attention vector
             # [ embed(n x b x h) + encoded(n x b x h)] tanh((b x n x h) * (h x 1) + bias(b x n x 1)) = (b x n x 1) --> alphas
-            embeds = tf.tile(current_embed, [self.n_lstm_step, 1, 1])
+            embeds = tf.tile(current_embed, [self.n_lstm_steps, 1, 1])
             added = tf.concat([embeds, encoded], axis=0) # (2n, b, h)
             added = tf.transpose(added, [1,0,2]) # (b, 2n, h)
             added_flat = tf.reshape(added, [-1, self.dim_hidden]) # (b*2n, h)
@@ -158,7 +158,7 @@ class Video_Caption_Generator():
             #    output1, state1 = self.lstm1(padding, state1)
             # current_embed --> (attention matrix) --> attention vector
             # [ embed(n x b x h) + encoded(n x b x h)] tanh((b x n x h) * (h x 1) + bias(b x n x 1)) = (b x n x 1) --> alphas
-            embeds = tf.tile(current_embed, [self.n_lstm_step, 1, 1])
+            embeds = tf.tile(current_embed, [self.n_lstm_steps, 1, 1])
             added = tf.concat([embeds, encoded], axis=0) # (2n, b, h)
             added = tf.transpose(added, [1,0,2]) # (b, 2n, h)
             added_flat = tf.reshape(added, [-1, self.dim_hidden]) # (b*2n, h)
