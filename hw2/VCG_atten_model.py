@@ -23,8 +23,8 @@ class Video_Caption_Generator():
         # Attention matrix parameters
         self.embed_att_w = tf.Variable(tf.random_uniform([dim_hidden, 1], -0.1,0.1), name='embed_att_w')
         self.embed_att_b = tf.Variable( tf.zeros([1]), name='embed_att_b')
-        #self.embed_att_Wa = tf.Variable(tf.random_uniform([dim_hidden, dim_hidden], -0.1,0.1), name='embed_att_Wa')
-        #self.embed_att_ba = tf.Variable( tf.zeros([dim_hidden]), name='embed_att_ba')
+        self.embed_att_Wa = tf.Variable(tf.random_uniform([dim_hidden, dim_hidden], -0.1,0.1), name='embed_att_Wa')
+        self.embed_att_ba = tf.Variable( tf.zeros([dim_hidden]), name='embed_att_ba')
         
         self.embed_word_W = tf.Variable(tf.random_uniform([dim_hidden, n_words], -0.1,0.1), name='embed_word_W')
         if bias_init_vector is not None:
@@ -85,7 +85,8 @@ class Video_Caption_Generator():
             added = tf.add(current_embed, encoded)
             added = tf.transpose(added, [1,0,2])
             added_flat = tf.reshape(added, [-1, self.dim_hidden])
-            alphas = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_w, self.embed_att_b, name='attention_matrix'))
+            alphas_hiddn = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_Wa, self.embed_att_ba, name='attention_hidden'))
+            alphas = tf.tanh(tf.nn.xw_plus_b(added_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
             alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
             atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [self.batch_size, -1])
@@ -153,10 +154,11 @@ class Video_Caption_Generator():
             added = tf.add(current_embed, encoded)
             added = tf.transpose(added, [1,0,2])
             added_flat = tf.reshape(added, [-1, self.dim_hidden])
-            alphas = tf.tanh(tf.nn.xw_plus_b(added, self.embed_att_w, self.embed_att_b, name='attention_matrix'))
+            alphas_hiddn = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_Wa, self.embed_att_ba, name='attention_hidden'))
+            alphas = tf.tanh(tf.nn.xw_plus_b(added_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
             alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
-            atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [1, -1])
+            atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [self.batch_size, -1])
  
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
