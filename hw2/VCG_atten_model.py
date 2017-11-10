@@ -60,7 +60,7 @@ class Video_Caption_Generator():
                    tf.get_variable_scope().reuse_variables()
                 output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
 
-            h_prev = tf.concat([h_prev, output1], axis=1)
+            h_prev = tf.concat([h_prev, tf.expand_dims(output1, axis=1)], axis=1)
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
@@ -139,7 +139,7 @@ class Video_Caption_Generator():
                    tf.get_variable_scope().reuse_variables()
                 output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
 
-            h_prev = tf.concat([h_prev, output1], axis=1)
+            h_prev = tf.concat([h_prev, tf.expand_dims(output1, axis=1)], axis=1)
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
