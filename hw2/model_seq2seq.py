@@ -149,6 +149,6 @@ def train(datadir, isAtten=False):
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
-        train(sys.argv[1], sys.argv[2])
+        train(sys.argv[1], bool(sys.argv[2]))
     else:
         train(sys.argv[1])
