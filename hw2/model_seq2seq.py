@@ -2,7 +2,7 @@
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-import os, sys, time, random
+import os, sys, time, random, pickle
 import utils
 
 def train(datadir, isAtten=False):
@@ -18,40 +18,33 @@ def train(datadir, isAtten=False):
     learning_rate = 0.001
 
     # get training and testing data
-    x_train, all_train_caps = utils.load_data(datadir, flag='train')
-    x_test, all_test_caps = utils.load_data(datadir, flag='test')
-    
+    #x_train, all_train_caps = utils.load_data(datadir, flag='train')
+    #x_test, all_test_caps = utils.load_data(datadir, flag='test')
+    x_train = np.load('./data/train.npy')
+    with open('./data/y_train.pkl', 'rb') as f:
+        all_train_caps, index = pickle.load(f)
+
     # Preprocess captions
     wordtoix, ixtoword, bias_init_vec = utils.preprocess_caps(all_train_caps, None, 1) 
 
-    if not isAtten:
-        import VCG_model as VCG
+    if not isAtten: 
         # Build S2VT model
-        model = VCG.Video_Caption_Generator(
-                    dim_image = dim_image,
-                    n_words = len(wordtoix),
-                    dim_hidden = dim_hidden,
-                    batch_size = batch_size,
-                    n_lstm_steps = n_frame_step,
-                    n_video_lstm_step = n_video_lstm_step,
-                    n_caption_lstm_step = n_caption_lstm_step,
-                    bias_init_vector = bias_init_vec)
-
-        tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
-    else:
-        import VCG_atten_model as VCG 
+        import VCG_model as VCG
+    else: 
         # Build S2VT attention model
-        model = VCG.Video_Caption_Generator(
-                    dim_image = dim_image,
-                    n_words = len(wordtoix),
-                    dim_hidden = dim_hidden,
-                    batch_size = batch_size,
-                    n_lstm_steps = n_frame_step,
-                    n_video_lstm_step = n_video_lstm_step,
-                    n_caption_lstm_step = n_caption_lstm_step,
-                    bias_init_vector = bias_init_vec)
+        import VCG_atten_model as VCG 
+    
+    model = VCG.Video_Caption_Generator(
+                dim_image = dim_image,
+                n_words = len(wordtoix),
+                dim_hidden = dim_hidden,
+                batch_size = batch_size,
+                n_lstm_steps = n_frame_step,
+                n_video_lstm_step = n_video_lstm_step,
+                n_caption_lstm_step = n_caption_lstm_step,
+                bias_init_vector = bias_init_vec)
 
-        tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
+    tf_loss, tf_video, tf_video_mask, tf_caption, tf_caption_mask, tf_probs = model.build_model()
      
     # Start session
     sess = tf.InteractiveSession()
