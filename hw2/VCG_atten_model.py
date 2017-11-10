@@ -89,7 +89,7 @@ class Video_Caption_Generator():
             alphas = tf.tanh(tf.nn.xw_plus_b(added_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
             alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
-            atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [self.batch_size, -1])
+            atten = tf.reshape(alphas @ (tf.transpose(encoded, [1,2,0])), [self.batch_size, -1])
             # Use attention vector to replace output1
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
@@ -158,7 +158,7 @@ class Video_Caption_Generator():
             alphas = tf.tanh(tf.nn.xw_plus_b(added_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
             alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
-            atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [self.batch_size, -1])
+            atten = tf.reshape(alphas @ (tf.transpose(encoded, [1,2,0])), [self.batch_size, -1])
  
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
