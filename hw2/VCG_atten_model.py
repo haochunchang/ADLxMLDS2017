@@ -57,13 +57,13 @@ class Video_Caption_Generator():
             with tf.variable_scope("LSTM1"):
                 if i > 0:
                    tf.get_variable_scope().reuse_variables()
-                output1, c_state1, m_state1 = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
+                output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
 
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
 
-                output2, c_state2, m_state2 = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
+                output2, (c_state2, m_state2) = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
 
         encoded = tf.transpose(image_emb, [1,0,2]) # from (b x n x h) to (n x b x h)
         ####### Decoding Stage #############
@@ -84,13 +84,15 @@ class Video_Caption_Generator():
             # [ embed(b x h) + encoded(n x b x h)] tanh((b x n x h) * (h x 1) + bias(b x n x 1)) = (b x n x 1) --> alphas
             added = tf.add(current_embed, encoded)
             added = tf.transpose(added, [1,0,2])
-            alphas = tf.tanh(tf.nn.xw_plus_b(added, self.embed_att_w, self.embed_att_b, name='attention_matrix'))
+            added_flat = tf.reshape(added, [-1, self.dim_hidden])
+            alphas = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_w, self.embed_att_b, name='attention_matrix'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
+            alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
             atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [self.batch_size, -1])
             # Use attention vector to replace output1
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
-                output2, c_state2, m_state2 = self.lstm2(tf.concat([current_embed, atten], 1), (c_state2, m_state2))
+                output2, (c_state2, m_state2) = self.lstm2(tf.concat([current_embed, atten], 1), (c_state2, m_state2))
 
             labels = tf.expand_dims(caption[:, i+1], 1)
             indices = tf.expand_dims(tf.range(0, self.batch_size, 1), 1)
@@ -129,13 +131,14 @@ class Video_Caption_Generator():
         for i in range(0, self.n_video_lstm_step):
             with tf.variable_scope("LSTM1"):
                 if i > 0:
-                    tf.get_variable_scope().reuse_variables()
-                output1, state1 = self.lstm1(image_emb[:, i, :], state1)
+                   tf.get_variable_scope().reuse_variables()
+                output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
 
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
-                output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
+
+                output2, (c_state2, m_state2) = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
 
         encoded = tf.transpose(image_emb, [1,0,2]) # from (b x n x h) to (n x b x h)
         for i in range(0, self.n_caption_lstm_step):
@@ -149,13 +152,15 @@ class Video_Caption_Generator():
             #    output1, state1 = self.lstm1(padding, state1)
             added = tf.add(current_embed, encoded)
             added = tf.transpose(added, [1,0,2])
+            added_flat = tf.reshape(added, [-1, self.dim_hidden])
             alphas = tf.tanh(tf.nn.xw_plus_b(added, self.embed_att_w, self.embed_att_b, name='attention_matrix'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
+            alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
             atten = tf.reshape(alphas @ (tf.transpose(encoded, [2,0,1])), [1, -1])
  
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
-                output2, state2 = self.lstm2(tf.concat([current_embed, atten], 1), state2)
+                output2, (c_state2, m_state2) = self.lstm2(tf.concat([current_embed, atten], 1), (c_state2, m_state2))
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             max_prob_index = tf.argmax(logit_words, 1)[0]
