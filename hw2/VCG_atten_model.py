@@ -48,6 +48,7 @@ class Video_Caption_Generator():
         c_state2, m_state2 = (tf.zeros([self.batch_size, self.lstm2.state_size[0]]), 
                                 tf.zeros([self.batch_size, self.lstm2.state_size[1]]))
         padding = tf.zeros([self.batch_size, self.dim_hidden])
+        h_prev = tf.zeros([self.batch_size, 1, self.dim_hidden])
 
         probs = []
         loss = 0.0
@@ -59,13 +60,14 @@ class Video_Caption_Generator():
                    tf.get_variable_scope().reuse_variables()
                 output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
 
+            h_prev = tf.concat([h_prev, output1], axis=1)
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
 
                 output2, (c_state2, m_state2) = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
-
-        encoded = tf.transpose(image_emb, [1,0,2]) # from (b x n x h) to (n x b x h)
+        h_prev = h_prev[:, 1:, :]
+        encoded = tf.transpose(h_prev, [1,0,2]) # from (b x n x h) to (n x b x h)
         ####### Decoding Stage #############
         for i in range(0, self.n_caption_lstm_step): 
             ## Phase 2 => only generate captions
@@ -86,7 +88,7 @@ class Video_Caption_Generator():
             added = tf.transpose(added, [1,0,2])
             added_flat = tf.reshape(added, [-1, self.dim_hidden])
             alphas_hidden = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_Wa, self.embed_att_ba, name='attention_hidden'))
-            alphas = tf.tanh(tf.nn.xw_plus_b(alphas_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
+            alphas = tf.nn.softmax(tf.nn.xw_plus_b(alphas_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
             alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
             atten = tf.reshape(tf.transpose(encoded, [1,2,0]) @ (alphas), [self.batch_size, -1])
@@ -123,6 +125,7 @@ class Video_Caption_Generator():
         c_state2, m_state2 = (tf.zeros([1, self.lstm2.state_size[0]]), 
                                 tf.zeros([1, self.lstm2.state_size[1]]))
         padding = tf.zeros([1, self.dim_hidden])
+        h_prev = tf.zeros([1, 1, self.dim_hidden])
 
         generated_words = []
 
@@ -135,13 +138,14 @@ class Video_Caption_Generator():
                    tf.get_variable_scope().reuse_variables()
                 output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
 
+            h_prev = tf.concat([h_prev, output1], axis=1)
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
 
                 output2, (c_state2, m_state2) = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
-
-        encoded = tf.transpose(image_emb, [1,0,2]) # from (b x n x h) to (n x b x h)
+        h_prev = h_prev[:, 1:, :]
+        encoded = tf.transpose(h_prev, [1,0,2]) # from (b x n x h) to (n x b x h)
         for i in range(0, self.n_caption_lstm_step):
 
             if i == 0:
@@ -155,7 +159,7 @@ class Video_Caption_Generator():
             added = tf.transpose(added, [1,0,2])
             added_flat = tf.reshape(added, [-1, self.dim_hidden])
             alphas_hidden = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_Wa, self.embed_att_ba, name='attention_hidden'))
-            alphas = tf.tanh(tf.nn.xw_plus_b(alphas_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
+            alphas = tf.nn.softmax(tf.nn.xw_plus_b(alphas_hidden, self.embed_att_w, self.embed_att_b, name='attention_out'))
             # (normalized) alphas(b x n x 1) * encoded(n x b x h) = attention(b x h)
             alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 1])
             atten = tf.reshape(tf.transpose(encoded, [1,2,0]) @ (alphas), [self.batch_size, -1])
