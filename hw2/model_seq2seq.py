@@ -118,7 +118,7 @@ def train(datadir, isAtten=False):
 
             # get caption_mask where nonzero is 1
             train_caps_masks = np.zeros((train_caps_matrix.shape[0], train_caps_matrix.shape[1]))
-            nonzeros = np.array(list(map(lambda x: (x != 0).sum(), train_caps_matrix))) # +1? it will keep an extra zero
+            nonzeros = np.array(list(map(lambda x: (x != 0).sum()+1, train_caps_matrix)))
             for ind, row in enumerate(train_caps_masks):
                 row[:nonzeros[ind]] = 1
 
