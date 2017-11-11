@@ -160,15 +160,17 @@ class Video_Caption_Generator():
             #    output1, state1 = self.lstm1(padding, state1)
             # current_embed --> (attention matrix) --> attention vector
             # [ embed(n x b x h) + encoded(n x b x h)] tanh((b x n x h) * (h x 1) + bias(b x n x 1)) = (b x n x 1) --> alphas
-            embeds = tf.tile(tf.expand_dims(current_embed, axis=0), [self.n_lstm_steps, 1, 1])
-            added = tf.concat([embeds, encoded], axis=0) # (2n, b, h)
+            new_embeds = tf.tile(tf.expand_dims(current_embed, axis=0), [self.n_lstm_steps, 1, 1])
+            added = tf.concat([new_embeds, encoded], axis=0) # (2n, b, h)
             added = tf.transpose(added, [1,0,2]) # (b, 2n, h)
             added_flat = tf.reshape(added, [-1, self.dim_hidden]) # (b*2n, h)
+
             alphas_hidden = tf.tanh(tf.nn.xw_plus_b(added_flat, self.embed_att_Wa, self.embed_att_ba, name='attention_hidden'))# (b*2n, h)
             alphas = tf.tanh(tf.nn.xw_plus_b(alphas_hidden, self.embed_att_w, self.embed_att_b, name='attention_out')) # (b*2n, 1)
-            alphas = tf.reshape(alphas, [self.batch_size, self.n_video_lstm_step, 2])
+            alphas = tf.reshape(alphas, [1, self.n_video_lstm_step, 2])
             alphas = tf.reduce_sum(alphas, axis=2, keep_dims=True) # (b, n, 1)
-            atten = tf.reshape(tf.transpose(encoded, [1,2,0]) @ (alphas), [self.batch_size, -1]) 
+            
+            atten = tf.reshape(tf.transpose(encoded, [1,2,0]) @ (alphas), [1, -1]) 
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
                 output2, (c_state2, m_state2) = self.lstm2(tf.concat([current_embed, atten], 1), (c_state2, m_state2))
