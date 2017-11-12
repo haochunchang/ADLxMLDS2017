@@ -14,8 +14,8 @@ class Video_Caption_Generator():
         with tf.device("/cpu:0"):
             self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
 
-        self.lstm1 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
-        self.lstm2 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
+        self.lstm1 = tf.contrib.rnn.GRUCell(dim_hidden)
+        self.lstm2 = tf.contrib.rnn.GRUCell(dim_hidden)
 
         self.encode_image_W = tf.Variable(tf.random_uniform([dim_image, dim_hidden], -0.1, 0.1), name='encode_image_W')
         self.encode_image_b = tf.Variable(tf.zeros([dim_hidden]), name='encode_image_b')
@@ -37,10 +37,8 @@ class Video_Caption_Generator():
         image_emb = tf.nn.xw_plus_b( video_flat, self.encode_image_W, self.encode_image_b ) # (batch_size*n_lstm_steps, dim_hidden)
         image_emb = tf.reshape(image_emb, [self.batch_size, self.n_lstm_steps, self.dim_hidden])
 
-        c_state1, m_state1 = (tf.zeros([self.batch_size, self.lstm1.state_size[0]]), 
-                                tf.zeros([self.batch_size, self.lstm1.state_size[1]]))
-        c_state2, m_state2 = (tf.zeros([self.batch_size, self.lstm2.state_size[0]]), 
-                                tf.zeros([self.batch_size, self.lstm2.state_size[1]]))
+        state1 = tf.zeros([self.batch_size, self.lstm1.state_size])
+        state2 = tf.zeros([self.batch_size, self.lstm2.state_size])
         padding = tf.zeros([self.batch_size, self.dim_hidden])
 
         probs = []
@@ -51,13 +49,13 @@ class Video_Caption_Generator():
             with tf.variable_scope("LSTM1"):
                 if i > 0:
                    tf.get_variable_scope().reuse_variables()
-                output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
+                output1, state1 = self.lstm1(image_emb[:,i,:], state1)
 
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
 
-                output2, (c_state2, m_state2) = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
+                output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
 
         ####### Decoding Stage #############
         for i in range(0, self.n_caption_lstm_step): 
@@ -66,19 +64,15 @@ class Video_Caption_Generator():
                 current_embed = tf.zeros([self.batch_size, self.dim_hidden])
             else:
                 with tf.device("/cpu:0"):
-                    # Schedule Sampling: exponential decay, P(correct_label) = 0.5^(i)
-                    p_correct = 0.87 ** i
-                    logit = tf.argmax(logit_words, axis=1, output_type=tf.int32)
-                    current_answer = np.random.choice(np.array([caption[:,i], logit]), p=np.array([p_correct, (1-p_correct)]))
-                    current_embed = tf.nn.embedding_lookup(self.Wemb, current_answer)
+                    current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
 
             with tf.variable_scope("LSTM1"):
                 tf.get_variable_scope().reuse_variables()
-                output1, (c_state1, m_state1) = self.lstm1(padding, (c_state1, m_state1))
+                output1, state1 = self.lstm1(padding, state1)
 
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
-                output2, (c_state2, m_state2) = self.lstm2(tf.concat([current_embed, output1], 1), (c_state2, m_state2))
+                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
 
             labels = tf.expand_dims(caption[:, i+1], 1)
             indices = tf.expand_dims(tf.range(0, self.batch_size, 1), 1)
@@ -103,10 +97,8 @@ class Video_Caption_Generator():
         image_emb = tf.nn.xw_plus_b(video_flat, self.encode_image_W, self.encode_image_b)
         image_emb = tf.reshape(image_emb, [1, self.n_video_lstm_step, self.dim_hidden])
 
-        c_state1, m_state1 = (tf.zeros([1, self.lstm1.state_size[0]]), 
-                                tf.zeros([1, self.lstm1.state_size[1]]))
-        c_state2, m_state2 = (tf.zeros([1, self.lstm2.state_size[0]]), 
-                                tf.zeros([1, self.lstm2.state_size[1]]))
+        state1 = tf.zeros([1, self.lstm1.state_size])
+        state2 = tf.zeros([1, self.lstm2.state_size])
         padding = tf.zeros([1, self.dim_hidden])
 
         generated_words = []
@@ -114,19 +106,17 @@ class Video_Caption_Generator():
         probs = []
         embeds = []
 
-        #=============== Encoding Stage ===================#
         for i in range(0, self.n_video_lstm_step):
             with tf.variable_scope("LSTM1"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
-                output1, (c_state1, m_state1) = self.lstm1(image_emb[:,i,:], (c_state1, m_state1))
+                output1, state1 = self.lstm1(image_emb[:, i, :], state1)
 
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
-                output2, (c_state2, m_state2) = self.lstm2(tf.concat([padding, output1], 1), (c_state2, m_state2))
-        
-        #============== Decoding Stage ====================#
+                output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
+
         for i in range(0, self.n_caption_lstm_step):
 
             if i == 0:
@@ -135,11 +125,11 @@ class Video_Caption_Generator():
 
             with tf.variable_scope("LSTM1"):
                 tf.get_variable_scope().reuse_variables()
-                output1, (c_state1, m_state1) = self.lstm1(padding, (c_state1, m_state1))
+                output1, state1 = self.lstm1(padding, state1)
 
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
-                output2, (c_state2, m_state2) = self.lstm2(tf.concat([current_embed, output1], 1), (c_state2, m_state2))
+                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             max_prob_index = tf.argmax(logit_words, 1)[0]
