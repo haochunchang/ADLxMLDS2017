@@ -63,11 +63,11 @@ class Video_Caption_Generator():
         for i in range(0, self.n_caption_lstm_step): 
             ## Phase 2 => only generate captions
             if i == 0:
-                current_embed = tf.ones([self.batch_size, self.dim_hidden]) # test 'many <pad>' problem
+                current_embed = tf.zeros([self.batch_size, self.dim_hidden])
             else:
                 with tf.device("/cpu:0"):
                     # Schedule Sampling: exponential decay, P(correct_label) = 0.5^(i)
-                    p_correct = 0.5 ** i
+                    p_correct = 0.87 ** i
                     logit = tf.argmax(logit_words, axis=1, output_type=tf.int32)
                     current_answer = np.random.choice(np.array([caption[:,i], logit]), p=np.array([p_correct, (1-p_correct)]))
                     current_embed = tf.nn.embedding_lookup(self.Wemb, current_answer)
