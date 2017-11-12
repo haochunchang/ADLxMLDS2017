@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import sys, json
 import utils
-import VCG_atten_model as VCG
+from attention import VCG_atten_model as VCG
 from os import listdir
 from os.path import join, isfile
 
