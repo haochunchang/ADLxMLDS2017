@@ -68,7 +68,7 @@ class Video_Caption_Generator():
                 with tf.device("/cpu:0"):
                     # Schedule Sampling: exponential decay, P(correct_label) = 0.5^(i)
                     p_correct = 0.5 ** i
-                    logit = tf.argmax(logit_words, axis=1, dtype=tf.int32)
+                    logit = tf.argmax(logit_words, axis=1, output_type=tf.int32)
                     current_answer = np.random.choice(np.array((caption[:,i], logit)), p=np.array(p_correct, (1-p_correct)))
                     current_embed = tf.nn.embedding_lookup(self.Wemb, current_answer)
 
