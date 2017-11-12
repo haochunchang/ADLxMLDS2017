@@ -31,8 +31,9 @@ def train(datadir, isAtten=False):
         # Build S2VT model
         import VCG_model as VCG
     else: 
+        import VCG_model_v2 as VCG
         # Build S2VT attention model
-        import VCG_atten_model as VCG 
+        #from attetion import VCG_atten_model as VCG 
     
     model = VCG.Video_Caption_Generator(
                 dim_image = dim_image,
