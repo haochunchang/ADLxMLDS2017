@@ -130,40 +130,40 @@ class Video_Caption_Generator():
             output2 = tf.reshape(output2, [1, self.dim_hidden, 1])
              
             if i == 0:
-                attention_X = output2
+                h_prev = output2
             else:
-                attention_X = tf.concat([attention_X, output2], 2) # 1 x h x n
+                h_prev = tf.concat([h_prev, output2], 2) # 1 x h x n
 
-            attention_X = tf.reshape(attention_X, [-1, self.n_video_lstm_step]) # (1 x h) x n
-            attention = tf.nn.xw_plus_b(attention_X, self.attention_W, self.attention_b) # (1 x h) x n
-            attention = tf.reshape(attention, [1, self.dim_hidden, self.n_video_lstm_step]) # 1 x h x n
-            attention = tf.reduce_sum(attention, 2) # 1 x h
+        h_prev = tf.reshape(h_prev, [-1, self.n_video_lstm_step]) # (1 x h) x n
+        attention = tf.nn.xw_plus_b(h_prev, self.attention_W, self.attention_b) # (1 x h) x n
+        attention = tf.reshape(attention, [1, self.dim_hidden, self.n_video_lstm_step]) # 1 x h x n
+        attention = tf.reduce_sum(attention, 2) # 1 x h
 
         ############################# Decoding Stage ######################################
         for i in range(0, self.n_caption_lstm_step):
 
-        if i == 0:
-            with tf.device('/cpu:0'):
-                current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
+            if i == 0:
+                with tf.device('/cpu:0'):
+                    current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
 
-        with tf.variable_scope("LSTM1"):
-            tf.get_variable_scope().reuse_variables()
-            output1, state1 = self.lstm1(tf.concat([attention, padding], 1), state1)
+            with tf.variable_scope("LSTM1"):
+                tf.get_variable_scope().reuse_variables()
+                output1, state1 = self.lstm1(tf.concat([attention, padding], 1), state1)
 
-        with tf.variable_scope("LSTM2"):
-            tf.get_variable_scope().reuse_variables()
-            output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+            with tf.variable_scope("LSTM2"):
+                tf.get_variable_scope().reuse_variables()
+                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
 
-        logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
-        max_prob_index = tf.argmax(logit_words, 1)[0]
-        video_caption.append(max_prob_index)
-        probs.append(logit_words)
+            logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
+            max_prob_index = tf.argmax(logit_words, 1)[0]
+            video_caption.append(max_prob_index)
+            probs.append(logit_words)
 
-        with tf.device("/cpu:0"):
-            current_embed = tf.nn.embedding_lookup(self.Wemb, max_prob_index)
-        current_embed = tf.expand_dims(current_embed, 0)
+            with tf.device("/cpu:0"):
+                current_embed = tf.nn.embedding_lookup(self.Wemb, max_prob_index)
+            current_embed = tf.expand_dims(current_embed, 0)
 
-        embeds.append(current_embed)
+            embeds.append(current_embed)
 
         return video, video_mask, video_caption, probs, embeds
 
