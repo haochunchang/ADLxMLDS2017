@@ -31,7 +31,7 @@ def train(datadir, isAtten=False):
         # Build S2VT model
         import VCG_model as VCG
     else: 
-        import VCG_model_v2 as VCG
+        import VCG_model_gru as VCG
         # Build S2VT attention model
         #from attetion import VCG_atten_model as VCG 
     
