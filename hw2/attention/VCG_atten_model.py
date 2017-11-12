@@ -3,11 +3,12 @@ from tensorflow.contrib.layers.python.layers import layers
 import math
 
 class Video_Caption_Generator():
-    def __init__(self, batch_size, n_words, dim_hidden, dim_image, n_video_lstm_step, n_caption_lstm_step, bias_init_vector=None):
+    def __init__(self, batch_size, n_words, dim_hidden, dim_image, n_lstm_steps, n_video_lstm_step, n_caption_lstm_step, bias_init_vector=None):
         self.batch_size = batch_size
         self.n_words = n_words
         self.dim_hidden = dim_hidden
         self.dim_image = dim_image
+        self.n_lstm_steps = n_lstm_steps
         self.n_video_lstm_step = n_video_lstm_step
         self.n_caption_lstm_step = n_caption_lstm_step
         self.bias_init_vector = bias_init_vector
@@ -50,13 +51,14 @@ class Video_Caption_Generator():
 
         ##############################  Encoding Stage ##################################
         for i in range(0, self.n_video_lstm_step):
-            if i > 0:
-                tf.get_variable_scope().reuse_variables()
-
             with tf.variable_scope("LSTM1"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
                 output1, state1 = self.lstm1(tf.concat([padding, image_emb[:, i, :]], 1), state1)
 
             with tf.variable_scope("LSTM2"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
                 output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
             output2 = tf.reshape(output2, [self.batch_size, self.dim_hidden, 1])
             
