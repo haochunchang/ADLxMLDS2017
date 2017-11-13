@@ -203,7 +203,7 @@ class Video_Caption_Generator():
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
             logit_back = tf.nn.xw_plus_b(output2_back, self.embed_word_W, self.embed_word_b)
-            max_prob_index = tf.argmax((logit_words+logit_back)/2, 1)[0]
+            max_prob_index = tf.argmax(tf.add(logit_words, logit_back)/2.0, 1)[0]
             generated_words.append(max_prob_index)
             probs.append(logit_words)
 
