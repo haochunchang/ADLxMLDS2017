@@ -120,7 +120,8 @@ def train(datadir):
 
             # Schedule Sampling: exponential decay--P(ground_truth) = k^(batch_i)
             p_truth = 0.6 ** i
-            probs = np.argmax(probs_val, axis=2).astype(int) # (b x n)
+            probs = np.argmax(probs_val, axis=2).astype(int) # (n x b)
+            probs = np.transpose(probs)
             probs = np.hstack([probs, np.zeros((len(probs), 1))]).astype(int)
  
             current = np.random.choice(np.array([train_caps_matrix, probs]), p=np.array([p_truth, (1-p_truth)]))
