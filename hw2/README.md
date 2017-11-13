@@ -4,9 +4,7 @@
 ## Package Requirement:
 * pandas (0.21.0)
 * numpy (1.12.1)
-* keras (2.0.7)
 * tensorflow (r1.3)
-* scikit-learn (0.19.0)
 
 ## Assume data directory tree
 * ./data/
@@ -29,10 +27,15 @@ python model_seq2seq.py [data directory]
 
 ```
 ## Model Architecture
-* see [VCG\_model.py](./VCG_model.py)
+* For basic seq2seq model, see [VCG\_model.py](./VCG_model.py)
+_Note: this script may produce warning about "state is tuple == True", this will be deprecated in the future_
 
-## Testing (Basic seq2seq, bleu score = 0.257)
+* For attention-based model, see [VCG\_atten\_model.py](./attention/VCG_atten_model.py)
+* For GRU-cell seq2seq model, see [VCG\_model\_gru.py](./VCG_model_gru.py)
+
+## Testing
 ```
+# Basic seq2seq, bleu score = 0.2648 / 0.5753
 ./hw2_seq2seq.sh [data directory] [outfilepath] [peer review output]
 
 ```
