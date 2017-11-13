@@ -15,9 +15,9 @@ class Video_Caption_Generator():
             self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
 
         self.lstm1 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
-        self.lstm1_back = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True, name='LSTM1_back')
+        self.lstm1_back = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
         self.lstm2 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
-        self.lstm2_back = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True, name='LSTM2_back')
+        self.lstm2_back = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
 
         self.encode_image_W = tf.Variable(tf.random_uniform([dim_image, dim_hidden], -0.1, 0.1), name='encode_image_W')
         self.encode_image_b = tf.Variable(tf.zeros([dim_hidden]), name='encode_image_b')
@@ -63,7 +63,7 @@ class Video_Caption_Generator():
                    tf.get_variable_scope().reuse_variables()
                 output1, (h_state1, c_state1) = self.lstm1(image_emb[:,i,:], (h_state1, c_state1))
 
-            with tf.variable_scope("LSTM2"):
+            with tf.variable_scope("LSTM3"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
 
@@ -71,12 +71,12 @@ class Video_Caption_Generator():
         
         ## Backward pass
         for i in range(self.n_video_lstm_step, -1, -1):
-            with tf.variable_scope("LSTM1_back"):
+            with tf.variable_scope("LSTM2"):
                 if i > 0:
                    tf.get_variable_scope().reuse_variables()
                 output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(image_emb[:,i,:], (h_state1_back, c_state1_back))
 
-            with tf.variable_scope("LSTM2_back"):
+            with tf.variable_scope("LSTM4"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([padding, output1_back], 1), 
@@ -97,15 +97,15 @@ class Video_Caption_Generator():
                 tf.get_variable_scope().reuse_variables()
                 output1, (h_state1, c_state1) = self.lstm1(padding, (h_state1, c_state1))
            
-            with tf.variable_scope("LSTM1_back"):
+            with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
                 output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(padding, (h_state1_back, c_state1_back))
 
-            with tf.variable_scope("LSTM2"):
+            with tf.variable_scope("LSTM3"):
                 tf.get_variable_scope().reuse_variables()
                 output2, (h_state2, c_state2) = self.lstm2(tf.concat([current_embed, output1], 1), (h_state2, c_state2))
             
-            with tf.variable_scope("LSTM2_back"):
+            with tf.variable_scope("LSTM4"):
                 tf.get_variable_scope().reuse_variables()
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([embed_back, output1_back], 1), 
                                                                                     (h_state2_back, c_state2_back))
@@ -161,19 +161,19 @@ class Video_Caption_Generator():
                     tf.get_variable_scope().reuse_variables()
                 output1, (h_state1, c_state1) = self.lstm1(image_emb[:,i,:], (h_state1, c_state1))
 
-            with tf.variable_scope("LSTM2"):
+            with tf.variable_scope("LSTM3"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
                 output2, (h_state2, c_state2) = self.lstm2(tf.concat([padding, output1], 1), (h_state2, c_state2))
 
         ## Backward pass
         for i in range(self.n_video_lstm_step, -1, -1):
-            with tf.variable_scope("LSTM1_back"):
+            with tf.variable_scope("LSTM2"):
                 if i > 0:
                    tf.get_variable_scope().reuse_variables()
                 output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(image_emb[:,i,:], (h_state1_back, c_state1_back))
 
-            with tf.variable_scope("LSTM2_back"):
+            with tf.variable_scope("LSTM4"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([padding, output1_back], 1), 
@@ -189,14 +189,14 @@ class Video_Caption_Generator():
             with tf.variable_scope("LSTM1"):
                 tf.get_variable_scope().reuse_variables()
                 output1, (h_state1, c_state1) = self.lstm1(padding, (h_state1, c_state1))
-            with tf.variable_scope("LSTM1_back"):
+            with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
                 output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(padding, (h_state1_back, c_state1_back))
 
-            with tf.variable_scope("LSTM2"):
+            with tf.variable_scope("LSTM3"):
                 tf.get_variable_scope().reuse_variables()
                 output2, (h_state2, c_state2) = self.lstm2(tf.concat([current_embed, output1], 1), (h_state2, c_state2))
-            with tf.variable_scope("LSTM2_back"):
+            with tf.variable_scope("LSTM4"):
                 tf.get_variable_scope().reuse_variables()
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([embed_back, output1_back], 1), 
                                                                                     (h_state2_back, c_state2_back))
