@@ -14,8 +14,10 @@ class Video_Caption_Generator():
         with tf.device("/cpu:0"):
             self.Wemb = tf.Variable(tf.random_uniform([n_words, dim_hidden], -0.1, 0.1), name='Wemb')
 
-        self.lstm1 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=False)
-        self.lstm2 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=False)
+        self.lstm1 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
+        self.lstm1_back = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True, name='LSTM1_back')
+        self.lstm2 = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True)
+        self.lstm2_back = tf.contrib.rnn.BasicLSTMCell(dim_hidden, state_is_tuple=True, name='LSTM2_back')
 
         self.encode_image_W = tf.Variable(tf.random_uniform([dim_image, dim_hidden], -0.1, 0.1), name='encode_image_W')
         self.encode_image_b = tf.Variable(tf.zeros([dim_hidden]), name='encode_image_b')
@@ -37,52 +39,91 @@ class Video_Caption_Generator():
         image_emb = tf.nn.xw_plus_b( video_flat, self.encode_image_W, self.encode_image_b ) # (batch_size*n_lstm_steps, dim_hidden)
         image_emb = tf.reshape(image_emb, [self.batch_size, self.n_lstm_steps, self.dim_hidden])
 
-        state1 = tf.zeros([self.batch_size, self.lstm1.state_size])
-        state2 = tf.zeros([self.batch_size, self.lstm2.state_size])
+        h_state1 = tf.zeros([self.batch_size, self.lstm1.state_size[0]])
+        c_state1 = tf.zeros([self.batch_size, self.lstm1.state_size[1]])
+        h_state1_back = tf.zeros([self.batch_size, self.lstm1_back.state_size[0]])
+        c_state1_back = tf.zeros([self.batch_size, self.lstm1_back.state_size[1]])
+
+        h_state2 = tf.zeros([self.batch_size, self.lstm2.state_size[0]])
+        c_state2 = tf.zeros([self.batch_size, self.lstm2.state_size[1]])
+        h_state2_back = tf.zeros([self.batch_size, self.lstm2_back.state_size[0]])
+        c_state2_back = tf.zeros([self.batch_size, self.lstm2_back.state_size[1]])
+
         padding = tf.zeros([self.batch_size, self.dim_hidden])
 
         probs = []
+        probs_back = []
         loss = 0.0
 
         ######  Encoding Stage ############
+        ## Forward pass
         for i in range(0, self.n_video_lstm_step):
             with tf.variable_scope("LSTM1"):
                 if i > 0:
                    tf.get_variable_scope().reuse_variables()
-                output1, state1 = self.lstm1(image_emb[:,i,:], state1)
+                output1, (h_state1, c_state1) = self.lstm1(image_emb[:,i,:], (h_state1, c_state1))
 
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
 
-                output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
+                output2, (h_state2, c_state2) = self.lstm2(tf.concat([padding, output1], 1), (h_state2, c_state2))
+        
+        ## Backward pass
+        for i in range(self.n_video_lstm_step, -1, -1):
+            with tf.variable_scope("LSTM1_back"):
+                if i > 0:
+                   tf.get_variable_scope().reuse_variables()
+                output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(image_emb[:,i,:], (h_state1_back, c_state1_back))
+
+            with tf.variable_scope("LSTM2_back"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
+                output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([padding, output1_back], 1), 
+                                                                                    (h_state2_back, c_state2_back))
 
         ####### Decoding Stage #############
         for i in range(0, self.n_caption_lstm_step): 
             ## Phase 2 => only generate captions
             if i == 0:
                 current_embed = tf.zeros([self.batch_size, self.dim_hidden])
+                embed_back = tf.zeros([self.batch_size, self.dim_hidden])
             else:
                 with tf.device("/cpu:0"):
                     current_embed = tf.nn.embedding_lookup(self.Wemb, caption[:, i])
+                    embed_back = tf.nn.embedding_lookup(self.Wemb, caption[:, -1-i])
 
             with tf.variable_scope("LSTM1"):
                 tf.get_variable_scope().reuse_variables()
-                output1, state1 = self.lstm1(padding, state1)
+                output1, (h_state1, c_state1) = self.lstm1(padding, (h_state1, c_state1))
+           
+            with tf.variable_scope("LSTM1_back"):
+                tf.get_variable_scope().reuse_variables()
+                output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(padding, (h_state1_back, c_state1_back))
 
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
-                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+                output2, (h_state2, c_state2) = self.lstm2(tf.concat([current_embed, output1], 1), (h_state2, c_state2))
+            
+            with tf.variable_scope("LSTM2_back"):
+                tf.get_variable_scope().reuse_variables()
+                output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([embed_back, output1_back], 1), 
+                                                                                    (h_state2_back, c_state2_back))
 
+            logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
+            logit_words_back = tf.nn.xw_plus_b(output2_back, self.embed_word_W, self.embed_word_b)
+            probs.append(logit_words)
+            probs_back.append(logit_words_back)
+            
+        for i in range(len(probs)):
             labels = tf.expand_dims(caption[:, i+1], 1)
             indices = tf.expand_dims(tf.range(0, self.batch_size, 1), 1)
             concated = tf.concat([indices, labels], 1)
             onehot_labels = tf.sparse_to_dense(concated, tf.stack([self.batch_size, self.n_words]), 1.0, 0.0)
 
-            logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logit_words, labels=onehot_labels)
+            new_logit = (probs[i] + probs_back[-1-i]) / 2.0
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=new_logit, labels=onehot_labels)
             cross_entropy = cross_entropy * caption_mask[:,i]
-            probs.append(logit_words)
 
             current_loss = tf.reduce_sum(cross_entropy)/self.batch_size
             loss += current_loss
@@ -97,8 +138,16 @@ class Video_Caption_Generator():
         image_emb = tf.nn.xw_plus_b(video_flat, self.encode_image_W, self.encode_image_b)
         image_emb = tf.reshape(image_emb, [1, self.n_video_lstm_step, self.dim_hidden])
 
-        state1 = tf.zeros([1, self.lstm1.state_size])
-        state2 = tf.zeros([1, self.lstm2.state_size])
+        h_state1 = tf.zeros([1, self.lstm1.state_size[0]])
+        c_state1 = tf.zeros([1, self.lstm1.state_size[1]])
+        h_state1_back = tf.zeros([1, self.lstm1_back.state_size[0]])
+        c_state1_back = tf.zeros([1, self.lstm1_back.state_size[1]])
+
+        h_state2 = tf.zeros([1, self.lstm2.state_size[0]])
+        c_state2 = tf.zeros([1, self.lstm2.state_size[1]])
+        h_state2_back = tf.zeros([1, self.lstm2_back.state_size[0]])
+        c_state2_back = tf.zeros([1, self.lstm2_back.state_size[1]])
+
         padding = tf.zeros([1, self.dim_hidden])
 
         generated_words = []
@@ -110,29 +159,51 @@ class Video_Caption_Generator():
             with tf.variable_scope("LSTM1"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
-                output1, state1 = self.lstm1(image_emb[:, i, :], state1)
+                output1, (h_state1, c_state1) = self.lstm1(image_emb[:,i,:], (h_state1, c_state1))
 
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
-                output2, state2 = self.lstm2(tf.concat([padding, output1], 1), state2)
+                output2, (h_state2, c_state2) = self.lstm2(tf.concat([padding, output1], 1), (h_state2, c_state2))
+
+        ## Backward pass
+        for i in range(self.n_video_lstm_step, -1, -1):
+            with tf.variable_scope("LSTM1_back"):
+                if i > 0:
+                   tf.get_variable_scope().reuse_variables()
+                output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(image_emb[:,i,:], (h_state1_back, c_state1_back))
+
+            with tf.variable_scope("LSTM2_back"):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
+                output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([padding, output1_back], 1), 
+                                                                                    (h_state2_back, c_state2_back))
 
         for i in range(0, self.n_caption_lstm_step):
 
             if i == 0:
                 with tf.device('/cpu:0'):
                     current_embed = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
+                    embed_back = tf.nn.embedding_lookup(self.Wemb, tf.ones([1], dtype=tf.int64))
 
             with tf.variable_scope("LSTM1"):
                 tf.get_variable_scope().reuse_variables()
-                output1, state1 = self.lstm1(padding, state1)
+                output1, (h_state1, c_state1) = self.lstm1(padding, (h_state1, c_state1))
+            with tf.variable_scope("LSTM1_back"):
+                tf.get_variable_scope().reuse_variables()
+                output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(padding, (h_state1_back, c_state1_back))
 
             with tf.variable_scope("LSTM2"):
                 tf.get_variable_scope().reuse_variables()
-                output2, state2 = self.lstm2(tf.concat([current_embed, output1], 1), state2)
+                output2, (h_state2, c_state2) = self.lstm2(tf.concat([current_embed, output1], 1), (h_state2, c_state2))
+            with tf.variable_scope("LSTM2_back"):
+                tf.get_variable_scope().reuse_variables()
+                output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([embed_back, output1_back], 1), 
+                                                                                    (h_state2_back, c_state2_back))
 
             logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
-            max_prob_index = tf.argmax(logit_words, 1)[0]
+            logit_back = tf.nn.xw_plus_b(output2_back, self.embed_word_W, self.embed_word_b)
+            max_prob_index = tf.argmax((logit_words+logit_back)/2, 1)[0]
             generated_words.append(max_prob_index)
             probs.append(logit_words)
 
