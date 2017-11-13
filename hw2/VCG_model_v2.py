@@ -70,7 +70,7 @@ class Video_Caption_Generator():
                 output2, (h_state2, c_state2) = self.lstm2(tf.concat([padding, output1], 1), (h_state2, c_state2))
         
         ## Backward pass
-        for i in range(self.n_video_lstm_step, -1, -1):
+        for i in range(self.n_video_lstm_step-1, -1, -1):
             with tf.variable_scope("LSTM2"):
                 if i > 0:
                    tf.get_variable_scope().reuse_variables()
