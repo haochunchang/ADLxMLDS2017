@@ -119,14 +119,14 @@ def train(datadir):
                         }) #( b x n x nword)
 
             # Schedule Sampling: exponential decay--P(ground_truth) = k^(batch_i)
-            p_truth = 0.6 ** i
-            probs = np.argmax(probs_val, axis=2).astype(int) # (n x b)
-            probs = np.transpose(probs)
-            probs = np.hstack([probs, np.zeros((len(probs), 1))]).astype(int)
+            #p_truth = 0.6 ** i
+            #probs = np.argmax(probs_val, axis=2).astype(int) # (n x b)
+            #probs = np.transpose(probs)
+            #probs = np.hstack([probs, np.zeros((len(probs), 1))]).astype(int)
  
-            current = np.random.choice(np.array([0,1]), p=np.array([p_truth, (1-p_truth)]))
-            if current == 1:
-                train_caps_matrix = probs
+            #current = np.random.choice(np.array([0,1]), p=np.array([p_truth, (1-p_truth)]))
+            #if current == 1:
+            #    train_caps_matrix = probs
 
             # get caption_mask where nonzero is 1
             train_caps_masks = np.zeros((train_caps_matrix.shape[0], train_caps_matrix.shape[1]))
