@@ -20,9 +20,9 @@ def test(model_path='./', datadir='./data', outfilepath='captions.csv', peer='pe
     video_path = join(datadir, 'testing_data', 'feat')
     test_videos = [f for f in listdir(video_path) if isfile(join(video_path, f))]
 
-    ixtoword = pd.Series(np.load(join(datadir, 'ixtoword.npy')).tolist())
+    ixtoword = pd.Series(np.load(join(datadir, 'gru_ixtoword.npy')).tolist())
     
-    bias_init_vector = np.load(join(datadir, 'bias_init_vector.npy'))
+    bias_init_vector = np.load(join(datadir, 'gru_bias_init_vector.npy'))
 
     model = VCG.Video_Caption_Generator(
                 dim_image=dim_image,
