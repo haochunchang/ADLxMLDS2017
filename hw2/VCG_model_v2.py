@@ -22,7 +22,7 @@ class Video_Caption_Generator():
         self.encode_image_W = tf.Variable(tf.random_uniform([dim_image, dim_hidden], -0.1, 0.1), name='encode_image_W')
         self.encode_image_b = tf.Variable(tf.zeros([dim_hidden]), name='encode_image_b')
 
-        self.embed_word_W = tf.Variable(tf.random_uniform([dim_hidden, n_words], -0.1,0.1), name='embed_word_W')
+        self.embed_word_W = tf.Variable(tf.random_uniform([2*dim_hidden, n_words], -0.1,0.1), name='embed_word_W')
         if bias_init_vector is not None:
             self.embed_word_b = tf.Variable(bias_init_vector.astype(np.float32), name='embed_word_b')
         else:
@@ -109,11 +109,8 @@ class Video_Caption_Generator():
                 tf.get_variable_scope().reuse_variables()
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([embed_back, output1_back], 1), 
                                                                                     (h_state2_back, c_state2_back))
-
-            logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
-            logit_words_back = tf.nn.xw_plus_b(output2_back, self.embed_word_W, self.embed_word_b)
-            probs.append(logit_words)
-            probs_back.append(logit_words_back)
+            probs.append(output2)
+            probs_back.append(output2_back)
             
         for i in range(len(probs)):
             labels = tf.expand_dims(caption[:, i+1], 1)
@@ -121,7 +118,8 @@ class Video_Caption_Generator():
             concated = tf.concat([indices, labels], 1)
             onehot_labels = tf.sparse_to_dense(concated, tf.stack([self.batch_size, self.n_words]), 1.0, 0.0)
 
-            new_logit = (probs[i] + probs_back[-1-i]) / 2.0
+            new_output = tf.concat([probs[i], probs_back[-1-i]], axis=1) # b x 2h x 1
+            logit_words = tf.nn.xw_plus_b(new_output, self.embed_word_W, self.embed_word_b)
             cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=new_logit, labels=onehot_labels)
             cross_entropy = cross_entropy * caption_mask[:,i]
 
@@ -153,6 +151,7 @@ class Video_Caption_Generator():
         generated_words = []
 
         probs = []
+        probs_back = []
         embeds = []
 
         for i in range(0, self.n_video_lstm_step):
@@ -201,9 +200,13 @@ class Video_Caption_Generator():
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([embed_back, output1_back], 1), 
                                                                                     (h_state2_back, c_state2_back))
 
-            logit_words = tf.nn.xw_plus_b(output2, self.embed_word_W, self.embed_word_b)
-            logit_back = tf.nn.xw_plus_b(output2_back, self.embed_word_W, self.embed_word_b)
-            max_prob_index = tf.argmax(tf.add(logit_words, logit_back)/2.0, 1)[0]
+            probs.append(output2)
+            probs_back.append(output2_back)
+
+        for i in range(len(probs)):
+            new_output = tf.concat([probs[i], probs_back[-1-i]], axis=1)
+            logit_words = tf.nn.xw_plus_b(new_output, self.embed_word_W, self.embed_word_b)
+            max_prob_index = tf.argmax(logit_words, 1)[0]
             generated_words.append(max_prob_index)
             probs.append(logit_words)
 
