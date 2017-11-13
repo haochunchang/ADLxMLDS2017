@@ -167,14 +167,14 @@ class Video_Caption_Generator():
                 output2, (h_state2, c_state2) = self.lstm2(tf.concat([padding, output1], 1), (h_state2, c_state2))
 
         ## Backward pass
-        for i in range(self.n_video_lstm_step, -1, -1):
+        for i in range(self.n_video_lstm_step-1, -1, -1):
             with tf.variable_scope("LSTM2"):
-                if i > 0:
+                if i < self.n_video_lstm_step-1:
                    tf.get_variable_scope().reuse_variables()
                 output1_back, (h_state1_back, c_state1_back) = self.lstm1_back(image_emb[:,i,:], (h_state1_back, c_state1_back))
 
             with tf.variable_scope("LSTM4"):
-                if i > 0:
+                if i < self.n_video_lstm_step-1:
                     tf.get_variable_scope().reuse_variables()
                 output2_back, (h_state2_back, c_state2_back) = self.lstm2_back(tf.concat([padding, output1_back], 1), 
                                                                                     (h_state2_back, c_state2_back))
