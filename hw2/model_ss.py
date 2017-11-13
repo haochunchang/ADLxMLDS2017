@@ -124,7 +124,7 @@ def train(datadir):
             probs = np.transpose(probs)
             probs = np.hstack([probs, np.zeros((len(probs), 1))]).astype(int)
  
-            current = np.random.choice(np.array([train_caps_matrix, probs]), p=np.array([p_truth, (1-p_truth)]))
+            current = np.random.choice([train_caps_matrix, probs], p=np.array([p_truth, (1-p_truth)]))
             train_caps_matrix = current
 
             # get caption_mask where nonzero is 1
