@@ -56,7 +56,6 @@ def test(model_path='./', datadir='./data', outfilepath='captions.csv', peer='pe
 
         generated_word_index = sess.run(caption_tf, feed_dict={video_tf: video_feat, video_mask_tf: video_mask})
         generated_words = ixtoword[generated_word_index]
-        print(generated_words)
         punctuation = np.argmax(np.array(generated_words) == '<pad>')
         if punctuation > 0:
             generated_words = generated_words[:punctuation] 
