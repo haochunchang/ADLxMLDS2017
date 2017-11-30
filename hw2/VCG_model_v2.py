@@ -120,7 +120,7 @@ class Video_Caption_Generator():
 
             new_output = tf.concat([probs[i], probs_back[-1-i]], axis=1) # b x 2h x 1
             logit_words = tf.nn.xw_plus_b(new_output, self.embed_word_W, self.embed_word_b)
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=new_logit, labels=onehot_labels)
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logit_words, labels=onehot_labels)
             cross_entropy = cross_entropy * caption_mask[:,i]
 
             current_loss = tf.reduce_sum(cross_entropy)/self.batch_size
