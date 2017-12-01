@@ -21,7 +21,7 @@ class Agent_PG(Agent):
         self.gamma = args.gamma
         self.freq = args.freq
 
-        self.action_size = env.get_action_space().n
+        self.action_size = 1#env.get_action_space().n
         self.hidden_dim = 256
 
         self.model = tf.Graph()
@@ -30,16 +30,24 @@ class Agent_PG(Agent):
             self.state_in = tf.placeholder(shape=[None, 80, 80, 1], dtype=tf.float32, name='state_in')
             
             init = tf.contrib.layers.xavier_initializer()
+            #self.conv = tf.layers.conv2d(self.state_in, 8, kernel_size=3, padding='same', activation=tf.nn.relu)
+            #self.conv = tf.layers.conv2d(self.conv, 8, kernel_size=3, padding='same', activation=tf.nn.relu)
+            #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
+            #self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', activation=tf.nn.relu)
             
+            #self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', activation=tf.nn.relu)
+            
+            #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
+            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', activation=tf.nn.relu)
+            
+            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', activation=tf.nn.relu)
+            
+            #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
             self.hidden = tf.contrib.layers.flatten(self.state_in)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
-            self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init,  
-                                            activation=tf.nn.relu)
-            self.hidden2 = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
-                                            activation=tf.nn.relu)
-            self.output = tf.layers.dense(self.hidden2, self.action_size, kernel_initializer=init,
-                                            activation=tf.nn.softmax)
+            self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
+                                            activation=tf.nn.sigmoid)
             #self.chosen_action = tf.argmax(self.output, 1)
 
             self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32, name='reward')
@@ -91,12 +99,16 @@ class Agent_PG(Agent):
             running_add = running_add * self.gamma + r[t]
             discounted_r[t] = running_add
         
-        discounted_r = (discounted_r - discounted_r.mean()) / discounted_r.std()
+        std = discounted_r.std()
+        mu = discounted_r.mean()
+        discounted_r = (discounted_r - mu) / std
         return discounted_r
     
     def prepro(self, s):
         s = s[35:195]
         s = s[::2,::2,0]
+        #s[:,:,1] = s[:,:,1] / 255.0
+        #s[:,:,2] = s[:,:,2] / 255.0
         s[s==144] = 0
         s[s==109] = 0
         s[s!=0] = 1
@@ -130,8 +142,9 @@ class Agent_PG(Agent):
                 while not done:
                     action_dist = sess.run(self.output, 
                                             feed_dict={self.state_in: [s]}) 
-                    
-                    action = np.random.choice(np.arange(0, action_dist[0].shape[0]), p=action_dist[0])
+                    action = 2 if action_dist[0] > np.random.uniform() else 3
+                    #action = np.random.choice(np.arange(0, action_dist[0].shape[0]), p=action_dist[0])
+                    #print(action_dist[0])
                     #action = np.argmax(action_dist == action)
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
                     s1 = self.prepro(s1)
