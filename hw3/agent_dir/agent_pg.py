@@ -21,28 +21,26 @@ class Agent_PG(Agent):
         self.gamma = args.gamma
         self.freq = args.freq
 
-        self.action_size = env.get_action_space().n
-        self.hidden_dim = 200
+        self.action_size = 3#env.get_action_space().n
+        self.hidden_dim = 256
 
         self.model = tf.Graph()
         with self.model.as_default():
             # Network Architecture
-            self.state_in = tf.placeholder(shape=[None, 210, 160, 3], dtype=tf.float32, name='state_in')
+            self.state_in = tf.placeholder(shape=[None, 105, 80, 1], dtype=tf.float32, name='state_in')
             
             # Standardization
             #red, green, blue = tf.split(axis=3, num_or_size_splits=3, value=self.state_in)
             #self.state_in = tf.concat(axis=3, values=[ blue - tf.reduce_mean(blue, axis=(1,2)),
                                                         #green - tf.reduce_mean(green, axis=(1,2)),
                                                         #red - tf.reduce_mean(red, axis=(1,2))])
-            self.gray_in = tf.image.rgb_to_grayscale(self.state_in)
             init = tf.contrib.layers.xavier_initializer()
-            self.resized_in = tf.layers.average_pooling2d(self.gray_in, 2, strides=2, padding='valid') # Downsample
-            self.conv = tf.layers.conv2d(self.resized_in, 4, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
-            self.maxpool = tf.layers.average_pooling2d(self.conv, 2, strides=2, padding='valid')
-            self.conv = tf.layers.conv2d(self.maxpool, 4, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu)
-            self.maxpool = tf.layers.average_pooling2d(self.conv, 2, strides=2, padding='valid')
+            self.conv = tf.layers.conv2d(self.state_in, 8, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
+            self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu)
+            #self.maxpool = tf.layers.max_pooling2d(self.conv, 2, strides=2, padding='valid')
             #print(self.maxpool.get_shape())
-            self.hidden = tf.contrib.layers.flatten(self.maxpool)
+            
+            self.hidden = tf.contrib.layers.flatten(self.state_in)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=tf.contrib.layers.xavier_initializer(), 
                                             activation=tf.nn.relu)
             self.hidden2 = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=tf.contrib.layers.xavier_initializer(), 
@@ -57,6 +55,10 @@ class Agent_PG(Agent):
             # Get action indexes
             self.indexes = tf.range(0, tf.shape(self.output)[0]) * tf.shape(self.output)[1] + self.action_holder
             self.responsible_outputs = tf.gather(tf.reshape(self.output, [-1]), self.indexes)
+            #self.loss = tf.losses.log_loss(
+            #                    labels = self.action_holder,
+            #                    predictions = self.responsible_outputs,
+            #                    weights = self.reward_holder)
             self.loss = -tf.reduce_sum(tf.log(self.responsible_outputs)*self.reward_holder)
         
             tvars = tf.trainable_variables()
@@ -98,7 +100,15 @@ class Agent_PG(Agent):
         
         discounted_r = (discounted_r - discounted_r.mean()) / discounted_r.std()
         return discounted_r
-
+    
+    def prepro(self, s):
+        s = s[35:195]
+        s = s[::2,::2,0]
+        s[s==144] = 0
+        s[s==109] = 0
+        s[s!=0] = 1
+        s = s.reshape((s.shape[0], s.shape[1], 1))
+        return s
 
     def train(self):
         """
@@ -120,17 +130,19 @@ class Agent_PG(Agent):
 
             while i < self.episodes:
                 s = (self.env).reset()
+                s = self.prepro(s)
                 running_reward = 0
                 episode_his = []
                 done = False
                 while not done:
                     action_dist = sess.run(self.output, 
                                             feed_dict={self.state_in: [s]}) 
-                    action = np.random.choice(np.arange(0, action_dist[0].shape[0]), p=action_dist[0])
-                    print(action_dist[0], action)
+                    action = np.random.choice(np.arange(1, 4), p=action_dist[0])
+                    #print(action_dist[0], action)
                     #action = np.argmax(action_dist == action)
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
-
+                    s1 = self.prepro(s1)
+                 
                     episode_his.append([s, action, r])
                     s = s1 - s
                     running_reward += r
@@ -156,7 +168,7 @@ class Agent_PG(Agent):
                         break
                 # Update running tally of rewards
                 if i % 1 == 0:
-                    print(np.mean(total_reward))
+                    print(np.sum(total_reward))
                     #print(total_length)
                     self.total_r_per_eps.append(total_reward)
                 
@@ -184,8 +196,9 @@ class Agent_PG(Agent):
 
         action_dist = self.sess.run(self.output, 
                                 feed_dict={self.state_in: [observation]})
-        action = np.argmax(action_dist)
-
+        print(action_dist[0])
+        action = np.argmax(action_dist[0])
+        
         return action#self.env.get_random_action()
 
 
