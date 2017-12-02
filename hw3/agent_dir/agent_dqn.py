@@ -2,15 +2,16 @@ from agent_dir.agent import Agent
 import tensorflow as tf
 import numpy as np
 import pickle, os
+import random
 
-class Agent_PG(Agent):
+class Agent_DQN(Agent):
     def __init__(self, env, args):
         """
         Initialize every things you need here.
         For example: building your model
         """
 
-        super(Agent_PG,self).__init__(env)
+        super(Agent_DQN,self).__init__(env)
         self.env = env
 
         # Define Agent Model...
@@ -36,11 +37,11 @@ class Agent_PG(Agent):
             # Network Architecture
             self.state_in = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.float32, name='state_in')
             self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32, name='reward')
-            self.action_holder = tf.placeholder(shape=[None], dtype=tf.int64, name='action')
+            self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32, name='action')
 
             init = tf.contrib.layers.xavier_initializer()
 
-            self.conv = tf.layers.max_pooling2d(self.state_in, 2, kernel_size=2) 
+            self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2) 
             self.hidden = tf.contrib.layers.flatten(self.conv)
             
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
@@ -97,15 +98,11 @@ class Agent_PG(Agent):
             total_length = []
             self.total_r_per_eps = [] # for plotting learning curve
 
-            gradBuffer = sess.run(tf.trainable_variables())
-            for ix, grad in enumerate(gradBuffer):
-                gradBuffer[ix] = grad * 0
-
             while self.learned_eps < self.episodes:
                 s = (self.env).reset()
                 done = False
+                running_reward = 0
                 while not done:
-                   
                     action = self.act(s, sess)
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
                  
@@ -119,12 +116,12 @@ class Agent_PG(Agent):
    
                     if len(self.memory) > self.bz: 
                         # sample mini-batch from memory
-                        minibatch = random_sample(self.memory, self.bz)
+                        minibatch = random.sample(self.memory, self.bz)
                         for s, a, r, s1, done in minibatch:
-                            predict = sess.run(self.outputs, feed_dict={self.state_in: s1})
+                            predict = sess.run(self.output, feed_dict={self.state_in: s1})
                             target = r
                             if not done:
-                                target = (reward + self.gamma * np.amax(predict[0]))
+                                target = (r + self.gamma * np.amax(predict[0]))
                             
                             target_f = predict
                             target_f[0][a] = target
