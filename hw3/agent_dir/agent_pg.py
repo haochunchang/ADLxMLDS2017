@@ -56,7 +56,7 @@ class Agent_PG(Agent):
             #    placeholder = tf.placeholder(tf.float32, name=str(idx)+'_holder')
             #    self.gradient_holders.append(placeholder)
 
-            self.gradients = tf.gradients(self.loss, tvars)
+            #self.gradients = tf.gradients(self.loss, tvars)
             optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
             #self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders, tvars))
             self.optim = optimizer.minimize(self.loss)
@@ -154,8 +154,6 @@ class Agent_PG(Agent):
                         
                         if i % self.freq == 0 and i != 0: 
                             #feed_dict = dictionary = dict(zip(self.gradient_holders, gradBuffer))
-                            grads = sess.run(self.gradients, feed_dict=feed_dict)
-                            print(np.sum(grads[0]), np.sum(grads[1]))
                             _ = sess.run(self.optim, feed_dict=feed_dict)
                             #for ix, grad in enumerate(gradBuffer):
                             #    gradBuffer[ix] = grad * 0
