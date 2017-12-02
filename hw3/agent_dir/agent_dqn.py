@@ -36,7 +36,7 @@ class Agent_DQN(Agent):
         with self.model.as_default():
             # Network Architecture
             self.state_in = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.float32, name='state_in')
-            self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32, name='reward')
+            self.reward_holder = tf.placeholder(shape=[None,4], dtype=tf.float32, name='reward')
             self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32, name='action')
 
             init = tf.contrib.layers.xavier_initializer()
@@ -118,23 +118,23 @@ class Agent_DQN(Agent):
                         # sample mini-batch from memory
                         minibatch = random.sample(self.memory, self.bz)
                         for s, a, r, s1, done in minibatch:
+                            s1 = s1.reshape((1, s1.shape[0], s1.shape[1], s1.shape[2]))
                             predict = sess.run(self.output, feed_dict={self.state_in: s1})
                             target = r
                             if not done:
-                                target = (r + self.gamma * np.amax(predict[0]))
+                                target = r + self.gamma * np.amax(predict[0])
                             
                             target_f = predict
                             target_f[0][a] = target
-                        
-                            _ = sess.run(self.optim, feed_dict={self.state_in: s, 
+                            _ = sess.run(self.optim, feed_dict={self.state_in: [s], 
                                                                 self.reward_holder: target_f,
-                                                                self.action_holder: a})
+                                                                self.action_holder: [a]})
                             if self.explore_rate > self.explore_min:
                                 self.explore_rate *= self.explore_decay
 
                 # Update running tally of rewards
                 if self.learned_eps % 10 == 0:
-                    print(np.sum(total_reward[-100:]))
+                    print(np.sum(total_reward[-10:]))
                     self.total_r_per_eps.append(total_reward)
                 
                 # save model every k epochs
