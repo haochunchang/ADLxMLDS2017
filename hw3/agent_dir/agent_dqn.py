@@ -13,6 +13,7 @@ class Agent_DQN(Agent):
 
         super(Agent_DQN,self).__init__(env)
         self.env = env
+        self.env.reset()
 
         # Define Agent Model...
         # Hyper-parameters
@@ -39,9 +40,19 @@ class Agent_DQN(Agent):
             self.reward_holder = tf.placeholder(shape=[None,4], dtype=tf.float32, name='reward')
             self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32, name='action')
 
-            init = tf.contrib.layers.xavier_initializer()
+            init = tf.truncated_normal_initializer()
 
             self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2) 
+            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=8, padding='same', kernel_initializer=init, activation=tf.nn.relu)
+            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=8, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
+            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2)
+            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=4, padding='same', kernel_initializer=init, activation=tf.nn.relu)
+            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=4, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
+            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2)
+            #self.conv = tf.layers.conv2d(self.conv, 64, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu)
+            #self.conv = tf.layers.conv2d(self.conv, 64, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
+            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2)
+            print(self.conv.get_shape())
             self.hidden = tf.contrib.layers.flatten(self.conv)
             
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
@@ -99,7 +110,7 @@ class Agent_DQN(Agent):
             self.total_r_per_eps = [] # for plotting learning curve
 
             while self.learned_eps < self.episodes:
-                s = (self.env).reset()
+                s = self.env.reset()
                 done = False
                 running_reward = 0
                 while not done:

@@ -21,7 +21,7 @@ class Agent_PG(Agent):
         self.gamma = args.gamma
         self.freq = args.freq
 
-        self.action_size = 3#env.get_action_space().n
+        self.action_size = 1#env.get_action_space().n
         self.hidden_dim = 256
 
         self.model = tf.Graph()
@@ -30,51 +30,36 @@ class Agent_PG(Agent):
             self.state_in = tf.placeholder(shape=[None, 80, 80, 1], dtype=tf.float32, name='state_in')
             
             init = tf.truncated_normal_initializer()
-            #self.conv = tf.layers.conv2d(self.state_in, 8, kernel_size=3, padding='same', activation=tf.nn.relu)
-            #self.conv = tf.layers.conv2d(self.conv, 8, kernel_size=3, padding='same', activation=tf.nn.relu)
-            #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
-            #self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', activation=tf.nn.relu)
-            
-            #self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', activation=tf.nn.relu)
-            
-            #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
-            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', activation=tf.nn.relu)
-            
-            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', activation=tf.nn.relu)
-            
-            #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
             self.hidden = tf.contrib.layers.flatten(self.state_in)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
             self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
-                                            activation=tf.nn.log_softmax)
+                                            activation=tf.nn.sigmoid)
+            print(self.output.get_shape())
             #self.chosen_action = tf.argmax(self.output, 1)
 
-            self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32, name='reward')
-            self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32, name='action')
+            self.reward_holder = tf.placeholder(shape=[None,1], dtype=tf.float32, name='reward')
+            self.action_holder = tf.placeholder(shape=[None,1], dtype=tf.float32, name='action')
 
             # Get action indexes
-            self.indexes = tf.range(0, tf.shape(self.output)[0]) * tf.shape(self.output)[1] + self.action_holder
-            self.responsible_outputs = tf.gather(tf.reshape(self.output, [-1]), self.indexes)
-            #self.loss = tf.losses.log_loss(
-            #                    labels = self.action_holder,
-            #                    predictions = self.responsible_outputs,
-            #                    weights = self.reward_holder)
+            self.loss = tf.losses.log_loss(
+                                labels = self.action_holder,
+                                predictions = self.output,
+                                weights = self.reward_holder)
             #self.loss = -tf.reduce_sum(tf.log(tf.clip_by_value(self.responsible_outputs, 1e-10, 1.0))*self.reward_holder)
-        
-            self.loss = -tf.reduce_sum(self.responsible_outputs*self.reward_holder)
+             
             tvars = tf.trainable_variables()
-            self.gradient_holders = []
-            for idx, var in enumerate(tvars):
-                placeholder = tf.placeholder(tf.float32, name=str(idx)+'_holder')
-                self.gradient_holders.append(placeholder)
+            #self.gradient_holders = []
+            #for idx, var in enumerate(tvars):
+            #    placeholder = tf.placeholder(tf.float32, name=str(idx)+'_holder')
+            #    self.gradient_holders.append(placeholder)
 
             self.gradients = tf.gradients(self.loss, tvars)
             optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
-            self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders, tvars))
-        
+            #self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders, tvars))
+            self.optim = optimizer.minimize(self.loss)
             if args.test_pg: 
                 model_path = os.path.join('models', 'pg-30')
             
@@ -102,9 +87,9 @@ class Agent_PG(Agent):
             running_add = running_add * self.gamma + r[t]
             discounted_r[t] = running_add
         
-        std = discounted_r.std()
-        mu = discounted_r.mean()
-        discounted_r = (discounted_r - mu) / std
+        mu = np.mean(discounted_r)
+        var = np.var(discounted_r)
+        discounted_r = (discounted_r - mu) / np.sqrt(var+1e-10)
         return discounted_r
     
     def prepro(self, s):
@@ -145,7 +130,8 @@ class Agent_PG(Agent):
                 while not done:
                     action_dist = sess.run(self.output, 
                                             feed_dict={self.state_in: [s]}) 
-                    action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+                    #action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+                    action = 2 if np.random.uniform() < action_dist else 3
                     if i % 100 == 0:
                         print(action_dist[0])
                     #action = np.argmax(action_dist == action)
@@ -162,23 +148,25 @@ class Agent_PG(Agent):
                         feed_dict={self.reward_holder: episode_his[:,2],
                                     self.action_holder: episode_his[:,1],
                                     self.state_in: np.array([i for i in episode_his[:,0]])}
-                        grads = sess.run(self.gradients, feed_dict=feed_dict)
-                        for idx, grad in enumerate(grads):
-                            gradBuffer[idx] += grad
+                        #grads = sess.run(self.gradients, feed_dict=feed_dict)
+                        #for idx, grad in enumerate(grads):
+                        #    gradBuffer[idx] += grad
                         
                         if i % self.freq == 0 and i != 0: 
-                            feed_dict = dictionary = dict(zip(self.gradient_holders, gradBuffer))
-                            _ = sess.run(self.update_batch, feed_dict=feed_dict)
-                            for ix, grad in enumerate(gradBuffer):
-                                gradBuffer[ix] = grad * 0
+                            #feed_dict = dictionary = dict(zip(self.gradient_holders, gradBuffer))
+                            grads = sess.run(self.gradients, feed_dict=feed_dict)
+                            print(np.sum(grads[0]), np.sum(grads[1]))
+                            _ = sess.run(self.optim, feed_dict=feed_dict)
+                            #for ix, grad in enumerate(gradBuffer):
+                            #    gradBuffer[ix] = grad * 0
 
                         total_length.append(episode_his[:,2].shape[0])
                         total_reward.append(running_reward)
                         break
                 # Update running tally of rewards
-                if i % 10 == 0:
-                    print(np.sum(total_reward[-100:]))
-                    #print(total_length)
+                if i % 30 == 0:
+                    print(np.sum(total_reward[-30:]))
+                    print(total_length[-1])
                     self.total_r_per_eps.append(total_reward)
                 
                 # save model every k epochs
