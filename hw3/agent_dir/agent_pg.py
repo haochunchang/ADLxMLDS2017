@@ -21,7 +21,7 @@ class Agent_PG(Agent):
         self.gamma = args.gamma
         self.freq = args.freq
 
-        self.action_size = 1#env.get_action_space().n
+        self.action_size = 3#env.get_action_space().n
         self.hidden_dim = 256
 
         self.model = tf.Graph()
@@ -29,7 +29,7 @@ class Agent_PG(Agent):
             # Network Architecture
             self.state_in = tf.placeholder(shape=[None, 80, 80, 1], dtype=tf.float32, name='state_in')
             
-            init = tf.contrib.layers.xavier_initializer()
+            init = tf.truncated_normal_initializer()
             #self.conv = tf.layers.conv2d(self.state_in, 8, kernel_size=3, padding='same', activation=tf.nn.relu)
             #self.conv = tf.layers.conv2d(self.conv, 8, kernel_size=3, padding='same', activation=tf.nn.relu)
             #self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
@@ -46,8 +46,10 @@ class Agent_PG(Agent):
             self.hidden = tf.contrib.layers.flatten(self.state_in)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
+            self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
+                                            activation=tf.nn.relu)
             self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
-                                            activation=tf.nn.sigmoid)
+                                            activation=tf.nn.log_softmax)
             #self.chosen_action = tf.argmax(self.output, 1)
 
             self.reward_holder = tf.placeholder(shape=[None], dtype=tf.float32, name='reward')
@@ -60,8 +62,9 @@ class Agent_PG(Agent):
             #                    labels = self.action_holder,
             #                    predictions = self.responsible_outputs,
             #                    weights = self.reward_holder)
-            self.loss = -tf.reduce_sum(tf.log(self.responsible_outputs)*self.reward_holder)
+            #self.loss = -tf.reduce_sum(tf.log(tf.clip_by_value(self.responsible_outputs, 1e-10, 1.0))*self.reward_holder)
         
+            self.loss = -tf.reduce_sum(self.responsible_outputs*self.reward_holder)
             tvars = tf.trainable_variables()
             self.gradient_holders = []
             for idx, var in enumerate(tvars):
@@ -142,9 +145,9 @@ class Agent_PG(Agent):
                 while not done:
                     action_dist = sess.run(self.output, 
                                             feed_dict={self.state_in: [s]}) 
-                    action = 2 if action_dist[0] > np.random.uniform() else 3
-                    #action = np.random.choice(np.arange(0, action_dist[0].shape[0]), p=action_dist[0])
-                    #print(action_dist[0])
+                    action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+                    if i % 100 == 0:
+                        print(action_dist[0])
                     #action = np.argmax(action_dist == action)
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
                     s1 = self.prepro(s1)
