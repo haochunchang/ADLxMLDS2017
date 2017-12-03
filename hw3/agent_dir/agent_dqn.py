@@ -13,7 +13,6 @@ class Agent_DQN(Agent):
 
         super(Agent_DQN,self).__init__(env)
         self.env = env
-        self.env.reset()
 
         # Define Agent Model...
         # Hyper-parameters
@@ -42,17 +41,25 @@ class Agent_DQN(Agent):
 
             init = tf.truncated_normal_initializer()
 
-            self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2) 
-            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=8, padding='same', kernel_initializer=init, activation=tf.nn.relu)
-            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=8, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
-            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2)
-            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=4, padding='same', kernel_initializer=init, activation=tf.nn.relu)
-            #self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=4, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
-            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2)
-            #self.conv = tf.layers.conv2d(self.conv, 64, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu)
-            #self.conv = tf.layers.conv2d(self.conv, 64, kernel_size=2, padding='same', kernel_initializer=init, activation=tf.nn.relu) 
-            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2)
-            print(self.conv.get_shape())
+            #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2) 
+            self.conv = tf.layers.conv2d(self.state_in, 8, kernel_size=3, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.conv2d(self.conv, 8, kernel_size=3, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
+            
+            self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+           
+            self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
+            self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
+ 
             self.hidden = tf.contrib.layers.flatten(self.conv)
             
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
@@ -62,10 +69,7 @@ class Agent_DQN(Agent):
             self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
                                             activation=None)
             
-            self.indexes = tf.range(0, tf.shape(self.output)[0]) * tf.shape(self.output)[1] + self.action_holder
-            self.responsible_outputs = tf.gather(tf.reshape(self.output, [-1]), self.indexes)
- 
-            pred_Q = tf.reduce_sum(self.responsible_outputs*self.reward_holder)
+            pred_Q = tf.reduce_sum(self.output*self.reward_holder)
             self.loss = tf.reduce_mean(tf.square(self.reward_holder - pred_Q))
 
             optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
@@ -99,6 +103,9 @@ class Agent_DQN(Agent):
         """
         Implement your training algorithm here
         """
+        config = tf.ConfigProto(
+                    device_count = {'GPU': 0}
+                )
         # Launch session
         with tf.Session(graph=self.model) as sess:
             saver = tf.train.Saver()
@@ -110,7 +117,7 @@ class Agent_DQN(Agent):
             self.total_r_per_eps = [] # for plotting learning curve
 
             while self.learned_eps < self.episodes:
-                s = self.env.reset()
+                s = (self.env).reset()
                 done = False
                 running_reward = 0
                 while not done:
@@ -118,7 +125,7 @@ class Agent_DQN(Agent):
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
                  
                     self.memory.append([s, action, r, s1, done])
-                    s = s1 - s
+                    s = s1
                     running_reward += r
                     if done:
                         total_length.append(len(self.memory))

@@ -21,7 +21,7 @@ class Agent_PG(Agent):
         self.gamma = args.gamma
         self.freq = args.freq
 
-        self.action_size = 1#env.get_action_space().n
+        self.action_size = 3#env.get_action_space().n
         self.hidden_dim = 256
 
         self.model = tf.Graph()
@@ -30,24 +30,23 @@ class Agent_PG(Agent):
             self.state_in = tf.placeholder(shape=[None, 80, 80, 1], dtype=tf.float32, name='state_in')
             
             init = tf.truncated_normal_initializer()
+            #init = tf.contrib.layers.xavier_initializer()
             self.hidden = tf.contrib.layers.flatten(self.state_in)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
             self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
-                                            activation=tf.nn.sigmoid)
+                                            activation=tf.nn.softmax)
             print(self.output.get_shape())
             #self.chosen_action = tf.argmax(self.output, 1)
 
             self.reward_holder = tf.placeholder(shape=[None,1], dtype=tf.float32, name='reward')
-            self.action_holder = tf.placeholder(shape=[None,1], dtype=tf.float32, name='action')
-
-            # Get action indexes
-            self.loss = tf.losses.log_loss(
-                                labels = self.action_holder,
-                                predictions = self.output,
-                                weights = self.reward_holder)
+            self.action_holder = tf.placeholder(shape=[None,1], dtype=tf.int32, name='action')
+            self.action_onehot = tf.one_hot(self.action_holder, self.action_size, on_value=1.0, off_value=0.0)
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                    labels=self.action_onehot, logits=self.output, name="cross_entropy")
+            self.loss = -tf.reduce_sum(tf.multiply(self.reward_holder, cross_entropy, name="rewards"))
             #self.loss = -tf.reduce_sum(tf.log(tf.clip_by_value(self.responsible_outputs, 1e-10, 1.0))*self.reward_holder)
              
             tvars = tf.trainable_variables()
@@ -89,7 +88,7 @@ class Agent_PG(Agent):
         
         mu = np.mean(discounted_r)
         var = np.var(discounted_r)
-        discounted_r = (discounted_r - mu) / np.sqrt(var+1e-10)
+        discounted_r = (discounted_r - mu) / np.sqrt(var+1e-6)
         return discounted_r
     
     def prepro(self, s):
@@ -107,8 +106,12 @@ class Agent_PG(Agent):
         """
         Implement your training algorithm here
         """
+        config = tf.ConfigProto(
+                    device_count = {'GPU': 0}
+                )
+  
         # Launch session
-        with tf.Session(graph=self.model) as sess:
+        with tf.Session(graph=self.model, config=config) as sess:
             saver = tf.train.Saver()
             init = tf.global_variables_initializer()
             sess.run(init)
@@ -130,10 +133,8 @@ class Agent_PG(Agent):
                 while not done:
                     action_dist = sess.run(self.output, 
                                             feed_dict={self.state_in: [s]}) 
-                    #action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
-                    action = 2 if np.random.uniform() < action_dist else 3
-                    if i % 100 == 0:
-                        print(action_dist[0])
+                    action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+                    #action = 2 if np.random.uniform() < action_dist else 3
                     #action = np.argmax(action_dist == action)
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
                     s1 = self.prepro(s1)
@@ -145,8 +146,8 @@ class Agent_PG(Agent):
                         episode_his = np.array(episode_his)
                         episode_his[:,2] = self.discount_rewards(episode_his[:,2])
                         
-                        feed_dict={self.reward_holder: episode_his[:,2],
-                                    self.action_holder: episode_his[:,1],
+                        feed_dict={self.reward_holder: np.vstack(episode_his[:,2]),
+                                    self.action_holder: np.vstack(episode_his[:,1]),
                                     self.state_in: np.array([i for i in episode_his[:,0]])}
                         #grads = sess.run(self.gradients, feed_dict=feed_dict)
                         #for idx, grad in enumerate(grads):
