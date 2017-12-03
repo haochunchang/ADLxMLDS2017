@@ -1,7 +1,7 @@
 from agent_dir.agent import Agent
 import tensorflow as tf
 import numpy as np
-import pickle, os
+import pickle, os, random
 
 class Agent_PG(Agent):
     def __init__(self, env, args):
@@ -20,47 +20,55 @@ class Agent_PG(Agent):
         self.episodes = args.eps # total episodes(epochs)
         self.gamma = args.gamma
         self.freq = args.freq
+        
+        # Exploration
+        self.explore_rate = 1.0
+        self.explore_min = 0.01
+        self.explore_decay = 0.995
 
         self.action_size = 3#env.get_action_space().n
-        self.hidden_dim = 256
+        self.hidden_dim = 200
 
         self.model = tf.Graph()
         with self.model.as_default():
             # Network Architecture
-            self.state_in = tf.placeholder(shape=[None, 80, 80, 1], dtype=tf.float32, name='state_in')
+            self.state_in = tf.placeholder(shape=[None, 80*80], dtype=tf.float32, name='state_in')
             
-            init = tf.truncated_normal_initializer()
-            #init = tf.contrib.layers.xavier_initializer()
-            self.hidden = tf.contrib.layers.flatten(self.state_in)
-            self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
-                                            activation=tf.nn.relu)
-            self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
-                                            activation=tf.nn.relu)
+            #init = tf.truncated_normal_initializer()
+            init = tf.contrib.layers.xavier_initializer(uniform=False)
+            b_init = tf.zeros_initializer()
+            #self.hidden = tf.contrib.layers.flatten(self.state_in)
+            self.hidden = tf.layers.dense(self.state_in, self.hidden_dim, kernel_initializer=init, 
+                                            bias_initializer=b_init, activation=tf.nn.relu)
+            #self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
+            #                                activation=tf.nn.relu)
             self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
-                                            activation=tf.nn.softmax)
-            print(self.output.get_shape())
+                                            bias_initializer=b_init, activation=None)
+            self.action_dist = tf.squeeze(tf.nn.softmax(self.output))
             #self.chosen_action = tf.argmax(self.output, 1)
 
             self.reward_holder = tf.placeholder(shape=[None,1], dtype=tf.float32, name='reward')
             self.action_holder = tf.placeholder(shape=[None,1], dtype=tf.int32, name='action')
-            self.action_onehot = tf.one_hot(self.action_holder, self.action_size, on_value=1.0, off_value=0.0)
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            self.action_onehot = tf.one_hot(self.action_holder, self.action_size, on_value=1, off_value=0)
+            
+            self.cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                     labels=self.action_onehot, logits=self.output, name="cross_entropy")
-            self.loss = -tf.reduce_sum(tf.multiply(self.reward_holder, cross_entropy, name="rewards"))
-            #self.loss = -tf.reduce_sum(tf.log(tf.clip_by_value(self.responsible_outputs, 1e-10, 1.0))*self.reward_holder)
-             
+            self.loss = -tf.reduce_sum(tf.multiply(self.reward_holder, self.cross_entropy, name="rewards"))
+            #self.loss = -tf.reduce_sum(tf.log(tf.clip_by_value(self.action_dist, 1e-10, 1.0))*self.reward_holder)
+            
             tvars = tf.trainable_variables()
-            #self.gradient_holders = []
-            #for idx, var in enumerate(tvars):
-            #    placeholder = tf.placeholder(tf.float32, name=str(idx)+'_holder')
-            #    self.gradient_holders.append(placeholder)
+            self.gradient_holders = []
+            for idx, var in enumerate(tvars):
+                placeholder = tf.placeholder(tf.float32, name=str(idx)+'_holder')
+                self.gradient_holders.append(placeholder)
 
-            #self.gradients = tf.gradients(self.loss, tvars)
+            self.gradients = tf.gradients(self.loss, tvars)
             optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
-            #self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders, tvars))
-            self.optim = optimizer.minimize(self.loss)
+            self.optim = optimizer.apply_gradients(zip(self.gradient_holders, tvars))
+            #self.optim = optimizer.minimize(self.loss)
+            
             if args.test_pg: 
-                model_path = os.path.join('models', 'pg-30')
+                model_path = os.path.join('models-3800')
             
                 print('loading trained model from {}'.format(model_path))
                 self.sess = tf.InteractiveSession()
@@ -86,9 +94,9 @@ class Agent_PG(Agent):
             running_add = running_add * self.gamma + r[t]
             discounted_r[t] = running_add
         
-        mu = np.mean(discounted_r)
-        var = np.var(discounted_r)
-        discounted_r = (discounted_r - mu) / np.sqrt(var+1e-6)
+        #mu = np.mean(discounted_r)
+        #var = np.var(discounted_r)
+        #discounted_r = (discounted_r - mu) / np.sqrt(var+1e-6)
         return discounted_r
     
     def prepro(self, s):
@@ -99,13 +107,21 @@ class Agent_PG(Agent):
         s[s==144] = 0
         s[s==109] = 0
         s[s!=0] = 1
-        s = s.reshape((s.shape[0], s.shape[1], 1))
+        #s = s / 255
+        s = s.reshape((s.shape[0]*s.shape[1]))
         return s
 
+    def act(self, s, sess):
+
+        action_dist = sess.run(self.action_dist, feed_dict={self.state_in: [s]}) 
+        if np.random.rand() <= self.explore_rate:
+            return random.randrange(self.action_size)
+
+        return np.random.choice(np.arange(0, action_dist.shape[0]), p=action_dist)
+ 
+
     def train(self):
-        """
-        Implement your training algorithm here
-        """
+        
         config = tf.ConfigProto(
                     device_count = {'GPU': 0}
                 )
@@ -131,47 +147,50 @@ class Agent_PG(Agent):
                 episode_his = []
                 done = False
                 while not done:
-                    action_dist = sess.run(self.output, 
-                                            feed_dict={self.state_in: [s]}) 
-                    action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+                    action_index = self.act(s, sess)
+                    #if i % 100 == 0:
+                    #    print(action_dist)
+                    action = action_index + 1
                     #action = 2 if np.random.uniform() < action_dist else 3
-                    #action = np.argmax(action_dist == action)
+                    
                     s1, r, done, _ = (self.env).step(action) # Get reward for taking action
                     s1 = self.prepro(s1)
                  
-                    episode_his.append([s, action, r])
+                    episode_his.append([s, action_index, r])
                     s = s1 - s
                     running_reward += r
                     if done: # Update policy network
                         episode_his = np.array(episode_his)
                         episode_his[:,2] = self.discount_rewards(episode_his[:,2])
-                        
                         feed_dict={self.reward_holder: np.vstack(episode_his[:,2]),
                                     self.action_holder: np.vstack(episode_his[:,1]),
                                     self.state_in: np.array([i for i in episode_his[:,0]])}
-                        #grads = sess.run(self.gradients, feed_dict=feed_dict)
-                        #for idx, grad in enumerate(grads):
-                        #    gradBuffer[idx] += grad
+                        grads = sess.run(self.gradients, feed_dict=feed_dict)
+                        for idx, grad in enumerate(grads):
+                            gradBuffer[idx] += grad
                         
-                        if i % self.freq == 0 and i != 0: 
-                            #feed_dict = dictionary = dict(zip(self.gradient_holders, gradBuffer))
+                        if i % self.freq == 0 and i != 0:
+                            print(np.mean(episode_his[:,2])) 
+                            feed_dict = dictionary = dict(zip(self.gradient_holders, gradBuffer))
                             _ = sess.run(self.optim, feed_dict=feed_dict)
-                            #for ix, grad in enumerate(gradBuffer):
-                            #    gradBuffer[ix] = grad * 0
+                            for ix, grad in enumerate(gradBuffer):
+                                gradBuffer[ix] = grad * 0
 
                         total_length.append(episode_his[:,2].shape[0])
                         total_reward.append(running_reward)
+                        if self.explore_rate > self.explore_min:
+                            self.explore_rate *= self.explore_decay
                         break
                 # Update running tally of rewards
                 if i % 30 == 0:
-                    print(np.sum(total_reward[-30:]))
-                    print(total_length[-1])
+                    print("Average reward of last 30 episodes: {}\n".format(np.mean(total_reward[-30:])))
+                    print("Average # of actions of last 30 episode: {}\n".format(np.mean(total_length[-30:])))
                     self.total_r_per_eps.append(total_reward)
                 
                 # save model every k epochs
                 epoch = i
                 if np.mod(epoch, 100) == 0:
-                    print("Saving the model of epoch{}...".format(epoch))
+                    print("Saving the model of epoch{}...\n".format(epoch))
                     saver.save(sess, './models', global_step=epoch)
                     with open('total_reward.pkl', 'wb') as p:
                         pickle.dump(self.total_r_per_eps, p)
@@ -189,11 +208,18 @@ class Agent_PG(Agent):
             action: int
                 the predicted action from trained model
         """
-
+        s = observation
+        s = s[35:195]
+        s = s[::2,::2,0]
+        s[s==144] = 0
+        s[s==109] = 0
+        s[s!=0] = 1
+        s = s.reshape((s.shape[0], s.shape[1], 1))
+ 
         action_dist = self.sess.run(self.output, 
-                                feed_dict={self.state_in: [observation]})
-        print(action_dist[0])
-        action = np.argmax(action_dist[0])
+                                feed_dict={self.state_in: [s]})
+        action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+        #action = np.argmax(action_dist[0] == action)
         
         return action#self.env.get_random_action()
 

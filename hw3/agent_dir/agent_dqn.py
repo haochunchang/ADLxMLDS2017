@@ -39,31 +39,34 @@ class Agent_DQN(Agent):
             self.reward_holder = tf.placeholder(shape=[None,4], dtype=tf.float32, name='reward')
             self.action_holder = tf.placeholder(shape=[None], dtype=tf.int32, name='action')
 
-            init = tf.truncated_normal_initializer()
-
+            #init = tf.truncated_normal_initializer()
+            init = tf.contrib.layers.xavier_initializer(uniform=False)
             #self.conv = tf.layers.max_pooling2d(self.state_in, 2, strides=2) 
-            self.conv = tf.layers.conv2d(self.state_in, 8, kernel_size=3, padding='same', kernel_initializer=init,
+            ### Block 1
+            self.conv = tf.layers.conv2d(self.state_in, 16, kernel_size=4, padding='same', kernel_initializer=init,
                                         activation=tf.nn.relu)
-            self.conv = tf.layers.conv2d(self.conv, 8, kernel_size=3, padding='same', kernel_initializer=init,
+            self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=4, padding='same', kernel_initializer=init,
                                         activation=tf.nn.relu)
             self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
-            
-            self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', kernel_initializer=init,
+            ### Block 2
+            self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
                                         activation=tf.nn.relu)
-            self.conv = tf.layers.conv2d(self.conv, 16, kernel_size=2, padding='same', kernel_initializer=init,
-                                        activation=tf.nn.relu)
-           
-            self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
             self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
                                         activation=tf.nn.relu)
             self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
                                         activation=tf.nn.relu)
             self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
- 
-            self.hidden = tf.contrib.layers.flatten(self.conv)
+            ### Block 3
+            self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu)
+            self.conv = tf.layers.conv2d(self.conv, 32, kernel_size=2, padding='same', kernel_initializer=init,
+                                        activation=tf.nn.relu) 
+            self.conv = tf.layers.max_pooling2d(self.conv, 2, strides=2)
             
-            self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
-                                            activation=tf.nn.relu)
+            ### Flatten into Dense
+            self.hidden = tf.contrib.layers.flatten(self.conv) 
             self.hidden = tf.layers.dense(self.hidden, self.hidden_dim, kernel_initializer=init, 
                                             activation=tf.nn.relu)
             self.output = tf.layers.dense(self.hidden, self.action_size, kernel_initializer=init,
@@ -131,7 +134,6 @@ class Agent_DQN(Agent):
                         total_length.append(len(self.memory))
                         total_reward.append(running_reward)
                         break
-   
                     if len(self.memory) > self.bz: 
                         # sample mini-batch from memory
                         minibatch = random.sample(self.memory, self.bz)
@@ -144,15 +146,17 @@ class Agent_DQN(Agent):
                             
                             target_f = predict
                             target_f[0][a] = target
-                            _ = sess.run(self.optim, feed_dict={self.state_in: [s], 
-                                                                self.reward_holder: target_f,
-                                                                self.action_holder: [a]})
+                            feed_dict = {self.state_in: [s], 
+                                         self.reward_holder: target_f,
+                                         self.action_holder: [a]}
+                            loss = sess.run(self.loss, feed_dict=feed_dict)
+                            _ = sess.run(self.optim, feed_dict=feed_dict)
                             if self.explore_rate > self.explore_min:
                                 self.explore_rate *= self.explore_decay
 
                 # Update running tally of rewards
                 if self.learned_eps % 10 == 0:
-                    print(np.sum(total_reward[-10:]))
+                    print("Average reward of last 10 episodes: {}\n".format(np.mean(total_reward[-10:])))
                     self.total_r_per_eps.append(total_reward)
                 
                 # save model every k epochs
@@ -177,11 +181,10 @@ class Agent_DQN(Agent):
             action: int
                 the predicted action from trained model
         """
-
-        action_dist = self.sess.run(self.output, 
-                                feed_dict={self.state_in: [observation]})
-        print(action_dist[0])
-        action = np.argmax(action_dist[0])
+        s1 = observation
+        s1 = s1.reshape((1, s1.shape[0], s1.shape[1], s1.shape[2]))
+        predict = sess.run(self.output, feed_dict={self.state_in: s1})
+        action = np.argmax(predict[0])
         
         return action#self.env.get_random_action()
 
