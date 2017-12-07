@@ -23,7 +23,7 @@ class Agent_DQN(Agent):
         self.bz = args.bz # batch size
         self.episodes = args.eps # total episodes(epochs)
         self.gamma = args.gamma
-        self.freq = 10000 # Update Frequency of Target Q network
+        self.freq = 100000 # Update Frequency of Target Q network
         self.init_replay = 20000
         self.noops = 30
 
@@ -33,6 +33,7 @@ class Agent_DQN(Agent):
         self.explore_decay = 0.99
 
         self.action_size = env.get_action_space().n
+        self.num_actions = env.get_action_space().n
         self.hidden_dim = 512
         self.t = 0
 
@@ -161,6 +162,9 @@ class Agent_DQN(Agent):
             if self.t >= self.init_replay:
                 stats = [self.total_reward, self.total_q_max / float(self.duration),
                 self.duration, self.total_loss / (float(self.duration) / float(100))]
+                if self.t % 1000 == 0:
+                    print("Episode: {}, Total reward: {}\n".format(self.episode, self.total_reward))
+                    print("Total loss / duration: {}".format(stats[3]))
                 for i in range(len(stats)):
                     self.sess.run(self.update_ops[i], feed_dict={
                         self.summary_placeholders[i]: float(stats[i])
@@ -225,12 +229,12 @@ class Agent_DQN(Agent):
         return summary_placeholders, update_ops, summary_op
 
     def load_network(self):
-        checkpoint = tf.train.get_checkpoint_state(SAVE_NETWORK_PATH)
-        if checkpoint and checkpoint.model_checkpoint_path:
-            self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
-            print('Successfully loaded: ' + checkpoint.model_checkpoint_path)
-        else:
-            print('Training new network...')
+        #checkpoint = tf.train.get_checkpoint_state("./models-")
+        #if checkpoint and checkpoint.model_checkpoint_path:
+            self.saver.restore(self.sess, './models-3390000')
+            print('Successfully loaded')
+        #else:
+            #print('Training new network...')
 
     def get_action_at_test(self, state):
         if random.random() <= 0.05:
@@ -255,8 +259,8 @@ class Agent_DQN(Agent):
         Put anything you want to initialize if necessary
 
         """
-        pass     
-    
+        pass
+
     def train(self):
         """
         Implement your training algorithm here
@@ -293,9 +297,7 @@ class Agent_DQN(Agent):
             action: int
                 the predicted action from trained model
         """
-        s1 = observation
-        predict = (self.sess).run(self.output, feed_dict={self.state_in: [s1]})
-        action = np.argmax(predict[0])
+        action = self.get_action_at_test(observation)
         
         return action#self.env.get_random_action()
 

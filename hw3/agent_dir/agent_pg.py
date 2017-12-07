@@ -73,7 +73,7 @@ class Agent_PG(Agent):
             #self.optim = optimizer.minimize(self.loss)
             
             if args.test_pg: 
-                model_path = os.path.join('models-3800')
+                model_path = os.path.join('pg_models-5000')
             
                 print('loading trained model from {}'.format(model_path))
                 self.sess = tf.InteractiveSession()
@@ -122,14 +122,18 @@ class Agent_PG(Agent):
     def train(self):
         
         config = tf.ConfigProto(
-                    device_count = {'GPU': 0}
+                    device_count = {'GPU': 1}
                 )
   
         # Launch session
         with tf.Session(graph=self.model, config=config) as sess:
             saver = tf.train.Saver()
-            init = tf.global_variables_initializer()
-            sess.run(init)
+            #init = tf.global_variables_initializer()
+            #sess.run(init)
+            model_path = os.path.join('models-800')
+            
+            print('loading trained model from {}'.format(model_path))
+            saver.restore(sess, model_path)
             i = 0
             total_reward = []
             total_length = []
@@ -190,8 +194,8 @@ class Agent_PG(Agent):
                 epoch = i
                 if np.mod(epoch, 100) == 0:
                     print("Saving the model of epoch{}...\n".format(epoch))
-                    saver.save(sess, './models', global_step=epoch)
-                    with open('total_reward.pkl', 'wb') as p:
+                    saver.save(sess, './pg_models', global_step=epoch)
+                    with open('pg_total_reward.pkl', 'wb') as p:
                         pickle.dump(self.total_r_per_eps, p)
                 i += 1
 
