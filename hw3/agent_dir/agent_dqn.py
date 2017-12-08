@@ -25,7 +25,6 @@ class Agent_DQN(Agent):
         self.gamma = args.gamma
         self.freq = 100000 # Update Frequency of Target Q network
         self.init_replay = 20000
-        self.noops = 30
 
         # Exploration
         self.explore_rate = 1.0
@@ -54,7 +53,7 @@ class Agent_DQN(Agent):
         self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
 
         self.sess = tf.InteractiveSession()
-        self.saver = tf.train.Saver(q_network_weights)
+        self.saver = tf.train.Saver(q_network_weights, max_to_keep=1)
         
         ###### Summary #######
         # Parameters used for summary
@@ -78,6 +77,7 @@ class Agent_DQN(Agent):
 
         # Initialize target network
         self.sess.run(self.update_target_network)
+        self.running_reward = []
 
     def build_network(self):
         
@@ -104,20 +104,15 @@ class Agent_DQN(Agent):
 
         # Clip the error, the loss is quadratic when the error is in (-1, 1), and linear outside of that region
         error = tf.abs(y - q_value)
-        quadratic_part = tf.clip_by_value(error, 0.0, 1.0)
-        linear_part = error - quadratic_part
-        loss = tf.reduce_mean(0.5 * tf.square(quadratic_part) + linear_part)
+        #quadratic_part = tf.clip_by_value(error, 0.0, 1.0)
+        #linear_part = error - quadratic_part
+        #loss = tf.reduce_mean(0.5 * tf.square(quadratic_part) + linear_part)
+        loss = tf.reduce_mean(tf.square(error))
 
-        optimizer = tf.train.RMSPropOptimizer(self.lr, momentum=0.95, epsilon=0.01)
+        optimizer = tf.train.RMSPropOptimizer(self.lr)
         grads_update = optimizer.minimize(loss, var_list=q_network_weights)
 
         return a, y, loss, grads_update
-
-    def get_initial_state(self, observation, last_observation):
-        processed_observation = np.maximum(observation, last_observation)
-        processed_observation = np.uint8(resize(rgb2gray(processed_observation), (84, 84)) * 255)
-        state = [processed_observation for _ in range(4)]
-        return np.stack(state, axis=2)
 
     def get_action(self, state):
         
@@ -132,11 +127,11 @@ class Agent_DQN(Agent):
         return action
 
     def run(self, state, action, reward, terminal, observation):
-        next_state = np.append(state[:, :, 1:], observation, axis=2)
+        next_state = observation
 
         # Store transition in replay memory
         self.replay_memory.append((state, action, reward, next_state, terminal))
-        if len(self.replay_memory) > 400000:
+        if len(self.replay_memory) > 10000:
             self.replay_memory.popleft()
 
         if self.t >= self.init_replay:
@@ -148,23 +143,26 @@ class Agent_DQN(Agent):
             if self.t % self.freq == 0:
                 self.sess.run(self.update_target_network)
 
-        # Save network
-        if self.t % 30000 == 0:
-            save_path = self.saver.save(self.sess, './models', global_step=self.t)
-            print('Successfully saved: ' + save_path)
+            # Save network
+            if self.t % 30000 == 0:
+                save_path = self.saver.save(self.sess, './models')#, global_step=self.t, max_to_keep=1)
+                print('Successfully saved: ' + save_path)
 
         self.total_reward += reward
         self.total_q_max += np.max(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
         self.duration += 1
 
         if terminal:
+            self.running_reward.append(self.total_reward)
             # Write summary
             if self.t >= self.init_replay:
                 stats = [self.total_reward, self.total_q_max / float(self.duration),
                 self.duration, self.total_loss / (float(self.duration) / float(100))]
-                if self.t % 1000 == 0:
-                    print("Episode: {}, Total reward: {}\n".format(self.episode, self.total_reward))
-                    print("Total loss / duration: {}".format(stats[3]))
+                if self.episode % 100 == 0:
+                    print("Episode: {}, Total reward: {}\n".format(self.episode, np.mean(self.running_reward[-100:])))
+                    print("Total duration: {}".format(stats[2]))
+                    with open("dqn_rewards.pkl", 'wb') as p:
+                        pickle.dump(self.running_reward, p)
                 for i in range(len(stats)):
                     self.sess.run(self.update_ops[i], feed_dict={
                         self.summary_placeholders[i]: float(stats[i])
@@ -231,8 +229,8 @@ class Agent_DQN(Agent):
     def load_network(self):
         #checkpoint = tf.train.get_checkpoint_state("./models-")
         #if checkpoint and checkpoint.model_checkpoint_path:
-            self.saver.restore(self.sess, './models-3390000')
-            print('Successfully loaded')
+        self.saver.restore(self.sess, './models-3390000')
+        print('Successfully loaded')
         #else:
             #print('Training new network...')
 
@@ -246,12 +244,6 @@ class Agent_DQN(Agent):
 
         return action
     
-    def preprocess(self, observation, last_observation):
-        processed_observation = np.maximum(observation, last_observation)
-        processed_observation = np.uint8(resize(rgb2gray(processed_observation), (84, 84)) * 255)
-        return np.reshape(processed_observation, (84, 84, 1))
-
-
     def init_game_setting(self):
         """
 
@@ -266,24 +258,17 @@ class Agent_DQN(Agent):
         Implement your training algorithm here
         """
         config = tf.ConfigProto(
-                    device_count = {'GPU': 0}
+                    device_count = {'GPU': 1}
                 )
         
         for _ in range(self.episodes):
             terminal = False
-            observation = self.env.reset()
-            
-            for _ in range(random.randint(1, self.noops)):
-                last_observation = observation
-                observation, _, _, _ = self.env.step(0)  # Do nothing
-                state = self.get_initial_state(observation, last_observation)
+            state = self.env.reset()
             
             while not terminal:
-                last_observation = observation
                 action = self.get_action(state)
                 observation, reward, terminal, _ = self.env.step(action)
-                processed_observation = self.preprocess(observation, last_observation)
-                state = self.run(state, action, reward, terminal, processed_observation)
+                state = self.run(state, action, reward, terminal, observation)
 
     def make_action(self, observation, test=True):
         """

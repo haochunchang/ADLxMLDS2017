@@ -73,12 +73,8 @@ class Agent_PG(Agent):
             #self.optim = optimizer.minimize(self.loss)
             
             if args.test_pg: 
-                model_path = os.path.join('pg_models-5000')
-            
-                print('loading trained model from {}'.format(model_path))
-                self.sess = tf.InteractiveSession()
+                self.model_path = os.path.join('./models/pg_models-1200')
                 self.saver = tf.train.Saver()
-                self.saver.restore(self.sess, model_path)
 
     def init_game_setting(self):
         """
@@ -87,7 +83,12 @@ class Agent_PG(Agent):
         Put anything you want to initialize if necessary
 
         """
-        pass
+        
+        self.s_prev = np.zeros((80, 80, 1))
+        print('loading trained model from {}'.format(self.model_path))
+        self.sess = tf.InteractiveSession(graph=self.model)
+        self.saver.restore(self.sess, self.model_path)
+
 
     def discount_rewards(self, r):
         """ take 1D float array of rewards and compute discounted reward """
@@ -130,7 +131,7 @@ class Agent_PG(Agent):
             saver = tf.train.Saver()
             #init = tf.global_variables_initializer()
             #sess.run(init)
-            model_path = os.path.join('models-800')
+            model_path = os.path.join('pg_models-5000')
             
             print('loading trained model from {}'.format(model_path))
             saver.restore(sess, model_path)
@@ -211,19 +212,14 @@ class Agent_PG(Agent):
             action: int
                 the predicted action from trained model
         """
-        s = observation
-        s = s[35:195]
-        s = s[::2,::2,0]
-        s[s==144] = 0
-        s[s==109] = 0
-        s[s!=0] = 1
-        s = s.reshape((s.shape[0], s.shape[1], 1))
- 
-        action_dist = self.sess.run(self.output, 
-                                feed_dict={self.state_in: [s]})
-        action = np.random.choice(np.arange(1, action_dist[0].shape[0]+1), p=action_dist[0])
+        self.s_cur = self.prepro(observation)
+        s = self.s_cur - self.s_prev
+        self.s_prev = self.s_cur
+
+        action_dist = self.output.eval(feed_dict={self.state_in: [s]})
+        action = np.random.choice(self.action_size, p=action_dist[0])
         #action = np.argmax(action_dist[0] == action)
-        
-        return action#self.env.get_random_action()
+        #print(action)        
+        return action+1#self.env.get_random_action()
 
 
