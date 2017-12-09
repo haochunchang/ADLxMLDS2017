@@ -19,17 +19,17 @@ class Agent_DQN(Agent):
 
         # Define Agent Model...
         # Hyper-parameters
-        self.lr = 0.00025 # learning rate
+        self.lr = args.lr # learning rate
         self.bz = args.bz # batch size
         self.episodes = args.eps # total episodes(epochs)
         self.gamma = args.gamma
-        self.freq = 10000 # Update Frequency of Target Q network
-        self.init_replay = 20000
+        self.freq = 1000 # Update Frequency of Target Q network
+        self.init_replay = 10000
 
         # Exploration
         self.explore_initial = 1.0
         self.explore_step = 1000000
-        self.explore_final = 0.1
+        self.explore_final = 0.05
         self.epsilon = self.explore_initial
         self.epsilon_step = (self.explore_initial - self.explore_final) / self.explore_step
 
@@ -133,7 +133,7 @@ class Agent_DQN(Agent):
 
         # Store transition in replay memory
         self.replay_memory.append((state, action, reward, next_state, terminal))
-        if len(self.replay_memory) > 400000:
+        if len(self.replay_memory) > 10000:
             self.replay_memory.popleft()
 
         if self.t >= self.init_replay:
@@ -211,7 +211,6 @@ class Agent_DQN(Agent):
                 self.y: y_batch
                 })
 
-        self.total_loss += loss
 
     def setup_summary(self):
         episode_total_reward = tf.Variable(0.)
