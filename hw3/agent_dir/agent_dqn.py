@@ -31,7 +31,7 @@ class Agent_DQN(Agent):
         self.explore_step = 1000000
         self.explore_final = 0.1
         self.epsilon = self.explore_initial
-        self.epsilon_step = (self.explore_inital - self.explore_final) / self.explore_step
+        self.epsilon_step = (self.explore_initial - self.explore_final) / self.explore_step
 
         self.action_size = env.get_action_space().n
         self.num_actions = env.get_action_space().n
