@@ -118,12 +118,12 @@ class Agent_DQN(Agent):
 
     def get_action(self, state):
         
-        if self.explore_rate >= random.random() or self.t < self.init_replay:
+        if self.epsilon >= random.random() or self.t < self.init_replay:
             action = random.randrange(self.action_size)
         else:
             action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
 
-        if self.explore_rate > self.explore_min and self.t >= self.init_replay:
+        if self.epsilon > self.explore_final and self.t >= self.init_replay:
             self.epsilon -= self.epsilon_step
 
         return action
