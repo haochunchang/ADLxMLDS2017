@@ -121,7 +121,7 @@ class Agent_DQN(Agent):
         if self.epsilon >= random.random() or self.t < self.init_replay:
             action = random.randrange(self.action_size)
         else:
-            action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
+            action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state)]}))
 
         if self.epsilon > self.explore_final and self.t >= self.init_replay:
             self.epsilon -= self.epsilon_step
@@ -151,7 +151,7 @@ class Agent_DQN(Agent):
                 print('Successfully saved: ' + save_path)
 
         self.total_reward += reward
-        self.total_q_max += np.max(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
+        self.total_q_max += np.max(self.q_values.eval(feed_dict={self.s: [np.float32(state)]}))
         self.duration += 1
 
         if terminal:
@@ -202,11 +202,11 @@ class Agent_DQN(Agent):
         # Convert True to 1, False to 0
         terminal_batch = np.array(terminal_batch) + 0
 
-        target_q_values_batch = self.target_q_values.eval(feed_dict={self.st: np.float32(np.array(next_state_batch) / 255.0)})
+        target_q_values_batch = self.target_q_values.eval(feed_dict={self.st: np.float32(np.array(next_state_batch))})
         y_batch = reward_batch + (1 - terminal_batch) * self.gamma * np.max(target_q_values_batch, axis=1)
 
         loss, _ = self.sess.run([self.loss, self.grads_update], feed_dict={
-                self.s: np.float32(np.array(state_batch) / 255.0),
+                self.s: np.float32(np.array(state_batch)),
                 self.a: action_batch,
                 self.y: y_batch
                 })
@@ -239,7 +239,7 @@ class Agent_DQN(Agent):
         if random.random() <= 0.05:
             action = random.randrange(self.num_actions)
         else:
-            action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
+            action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state)]}))
 
         self.t += 1
 
