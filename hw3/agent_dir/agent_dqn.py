@@ -19,17 +19,19 @@ class Agent_DQN(Agent):
 
         # Define Agent Model...
         # Hyper-parameters
-        self.lr = args.lr # learning rate
+        self.lr = 0.00025 # learning rate
         self.bz = args.bz # batch size
         self.episodes = args.eps # total episodes(epochs)
         self.gamma = args.gamma
-        self.freq = 100000 # Update Frequency of Target Q network
+        self.freq = 10000 # Update Frequency of Target Q network
         self.init_replay = 20000
 
         # Exploration
-        self.explore_rate = 1.0
-        self.explore_min = 0.1
-        self.explore_decay = 0.99
+        self.explore_initial = 1.0
+        self.explore_step = 1000000
+        self.explore_final = 0.1
+        self.epsilon = self.explore_initial
+        self.epsilon_step = (self.explore_inital - self.explore_final) / self.explore_step
 
         self.action_size = env.get_action_space().n
         self.num_actions = env.get_action_space().n
@@ -104,12 +106,12 @@ class Agent_DQN(Agent):
 
         # Clip the error, the loss is quadratic when the error is in (-1, 1), and linear outside of that region
         error = tf.abs(y - q_value)
-        #quadratic_part = tf.clip_by_value(error, 0.0, 1.0)
-        #linear_part = error - quadratic_part
-        #loss = tf.reduce_mean(0.5 * tf.square(quadratic_part) + linear_part)
-        loss = tf.reduce_mean(tf.square(error))
+        quadratic_part = tf.clip_by_value(error, 0.0, 1.0)
+        linear_part = error - quadratic_part
+        loss = tf.reduce_mean(0.5 * tf.square(quadratic_part) + linear_part)
+        #loss = tf.reduce_mean(tf.square(error))
 
-        optimizer = tf.train.RMSPropOptimizer(self.lr)
+        optimizer = tf.train.RMSPropOptimizer(self.lr, momentum=0.95, epsilon=0.01)
         grads_update = optimizer.minimize(loss, var_list=q_network_weights)
 
         return a, y, loss, grads_update
@@ -122,7 +124,7 @@ class Agent_DQN(Agent):
             action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
 
         if self.explore_rate > self.explore_min and self.t >= self.init_replay:
-            self.explore_rate *= self.explore_decay
+            self.epsilon -= self.epsilon_step
 
         return action
 
@@ -131,7 +133,7 @@ class Agent_DQN(Agent):
 
         # Store transition in replay memory
         self.replay_memory.append((state, action, reward, next_state, terminal))
-        if len(self.replay_memory) > 10000:
+        if len(self.replay_memory) > 400000:
             self.replay_memory.popleft()
 
         if self.t >= self.init_replay:
@@ -166,7 +168,7 @@ class Agent_DQN(Agent):
                 for i in range(len(stats)):
                     self.sess.run(self.update_ops[i], feed_dict={
                         self.summary_placeholders[i]: float(stats[i])
-                        })
+                    })
                 summary_str = self.sess.run(self.summary_op)
                 self.summary_writer.add_summary(summary_str, self.episode + 1)
 
@@ -229,7 +231,7 @@ class Agent_DQN(Agent):
     def load_network(self):
         #checkpoint = tf.train.get_checkpoint_state("./models-")
         #if checkpoint and checkpoint.model_checkpoint_path:
-        self.saver.restore(self.sess, './models-3390000')
+        self.saver.restore(self.sess, './models')
         print('Successfully loaded')
         #else:
             #print('Training new network...')
