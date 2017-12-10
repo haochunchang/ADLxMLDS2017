@@ -7,7 +7,6 @@ from collections import deque
 from keras.models import Sequential
 from keras.layers import Conv2D, Flatten, Dense
 
-
 class Agent_DQN(Agent):
     def __init__(self, env, args):
 
@@ -38,6 +37,7 @@ class Agent_DQN(Agent):
 
         # Create replay memory
         self.replay_memory = deque()
+        self.surprises = deque()
 
         # Create q network
         self.s, self.q_values, q_network = self.build_network()
@@ -128,9 +128,14 @@ class Agent_DQN(Agent):
 
     def run(self, state, action, reward, terminal, observation):
         next_state = observation
+        
+        target_q_value = self.target_q_values.eval(feed_dict={self.st: np.float32(np.array(next_state))})
+        q_value = self.q_value.eval(feed_dict={self.s: np.float32(np.array(state))})
+        surprise = abs(reward + (1 - int(terminal)) * self.gamma * np.max(target_q_value, axis=1) - q_value)
 
         # Store transition in replay memory
         self.replay_memory.append((state, action, reward, next_state, terminal))
+        self.surprises.append(surprise)
         if len(self.replay_memory) > 10000:
             self.replay_memory.popleft()
 
@@ -189,7 +194,7 @@ class Agent_DQN(Agent):
         y_batch = []
 
         # Sample random minibatch of transition from replay memory
-        minibatch = random.sample(self.replay_memory, self.bz)
+        minibatch = random.choices(self.replay_memory, weights=self.surprises, k=self.bz)
         for data in minibatch:
             state_batch.append(data[0])
             action_batch.append(data[1])
@@ -201,12 +206,7 @@ class Agent_DQN(Agent):
         terminal_batch = np.array(terminal_batch) + 0
 
         target_q_values_batch = self.target_q_values.eval(feed_dict={self.st: np.float32(np.array(next_state_batch))})
-        #y_batch = reward_batch + (1 - terminal_batch) * self.gamma * np.max(target_q_values_batch, axis=1)
-        # Double Q Learning
-        next_action_batch = np.argmax(self.q_values.eval(feed_dict={self.s: next_state_batch}), axis=1)
-        for i in range(len(minibatch)):
-            y_batch.append(reward_batch[i] + (1 - terminal_batch[i]) * self.gamma *
-                                target_q_values_batch[i][next_action_batch[i]])
+        y_batch = reward_batch + (1 - terminal_batch) * self.gamma * np.max(target_q_values_batch, axis=1)
 
         loss, _ = self.sess.run([self.loss, self.grads_update], feed_dict={
                 self.s: np.float32(np.array(state_batch)),

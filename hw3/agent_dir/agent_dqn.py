@@ -4,8 +4,6 @@ import numpy as np
 import pickle, os
 import random
 from collections import deque
-from skimage.color import rgb2gray
-from skimage.transform import resize
 from keras.models import Sequential
 from keras.layers import Conv2D, Flatten, Dense
 
