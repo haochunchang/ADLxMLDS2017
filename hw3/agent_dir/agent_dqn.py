@@ -52,7 +52,11 @@ class Agent_DQN(Agent):
         # Define loss and gradient update operation
         self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
 
-        self.sess = tf.InteractiveSession()
+        config = tf.ConfigProto(
+                    device_count = {'GPU': 0}
+                )
+        
+        self.sess = tf.InteractiveSession(config=config)
         self.saver = tf.train.Saver(q_network_weights, max_to_keep=1)
         
         ###### Summary #######
@@ -256,10 +260,6 @@ class Agent_DQN(Agent):
         """
         Implement your training algorithm here
         """
-        config = tf.ConfigProto(
-                    device_count = {'GPU': 1}
-                )
-        
         for _ in range(self.episodes):
             terminal = False
             state = self.env.reset()
