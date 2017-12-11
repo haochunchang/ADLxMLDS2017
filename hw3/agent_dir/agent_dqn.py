@@ -53,7 +53,7 @@ class Agent_DQN(Agent):
         self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
 
         config = tf.ConfigProto(
-                    device_count = {'GPU': 0}
+                    device_count = {'GPU': 1}
                 )
         
         self.sess = tf.InteractiveSession(config=config)
@@ -232,7 +232,7 @@ class Agent_DQN(Agent):
     def load_network(self):
         #checkpoint = tf.train.get_checkpoint_state("./models-")
         #if checkpoint and checkpoint.model_checkpoint_path:
-        self.saver.restore(self.sess, './models')
+        self.saver.restore(self.sess, './models/dqn_models')
         print('Successfully loaded')
         #else:
             #print('Training new network...')
