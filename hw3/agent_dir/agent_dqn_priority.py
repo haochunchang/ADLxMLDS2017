@@ -129,8 +129,8 @@ class Agent_DQN(Agent):
     def run(self, state, action, reward, terminal, observation):
         next_state = observation
         
-        target_q_value = self.target_q_values.eval(feed_dict={self.st: np.float32(np.array(next_state))})
-        q_value = self.q_value.eval(feed_dict={self.s: np.float32(np.array(state))})
+        target_q_value = self.target_q_values.eval(feed_dict={self.st: np.expand_dims(np.float32(np.array(next_state)),axis=0)})
+        q_value = self.q_values.eval(feed_dict={self.s: np.expand_dims(np.float32(np.array(state)), axis=0)})
         surprise = abs(reward + (1 - int(terminal)) * self.gamma * np.max(target_q_value, axis=1) - q_value)
 
         # Store transition in replay memory
@@ -166,7 +166,7 @@ class Agent_DQN(Agent):
                 if self.episode % 100 == 0:
                     print("Episode: {}, Total reward: {}\n".format(self.episode, np.mean(self.running_reward[-100:])))
                     print("Total duration: {}".format(stats[2]))
-                    with open("dqn_rewards.pkl", 'wb') as p:
+                    with open("dqn_prior_rewards.pkl", 'wb') as p:
                         pickle.dump(self.running_reward, p)
                 for i in range(len(stats)):
                     self.sess.run(self.update_ops[i], feed_dict={
@@ -194,7 +194,8 @@ class Agent_DQN(Agent):
         y_batch = []
 
         # Sample random minibatch of transition from replay memory
-        minibatch = random.choices(self.replay_memory, weights=self.surprises, k=self.bz)
+        minibatch_index = np.random.choice(np.arange(len(self.replay_memory)), p=self.surprises/sum(self.surprises), size=self.bz)
+        minibatch = self.replay_memory[minibatch_index]
         for data in minibatch:
             state_batch.append(data[0])
             action_batch.append(data[1])
