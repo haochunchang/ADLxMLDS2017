@@ -217,8 +217,8 @@ class Agent_PG(Agent):
         self.s_prev = self.s_cur
 
         action_dist = self.output.eval(feed_dict={self.state_in: [s]})
-        action = np.random.choice(self.action_size, p=action_dist[0])
-        #action = np.argmax(action_dist[0] == action)
+        #action = np.random.choice(self.action_size, p=action_dist[0])
+        action = np.argmax(action_dist[0])
         #print(action)        
         return action+1#self.env.get_random_action()
 
