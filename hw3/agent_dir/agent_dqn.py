@@ -254,7 +254,7 @@ class Agent_DQN(Agent):
         Put anything you want to initialize if necessary
 
         """
-        pass
+        random.seed(1)
 
     def train(self):
         """
