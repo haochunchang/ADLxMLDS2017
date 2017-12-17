@@ -47,24 +47,20 @@ class GAN():
 
         fake_image = self.generator(t_z, t_real_caption)
 
-        disc_real_image, disc_real_image_logits = self.discriminator(t_real_image, t_real_caption)
-        disc_wrong_image, disc_wrong_image_logits = self.discriminator(t_wrong_image, t_real_caption, reuse = True)
-        disc_fake_image, disc_fake_image_logits = self.discriminator(fake_image, t_real_caption, reuse = True)
+        disc_real_image = self.discriminator(t_real_image, t_real_caption)
+        disc_wrong_image = self.discriminator(t_wrong_image, t_real_caption, reuse = True)
+        disc_fake_image = self.discriminator(fake_image, t_real_caption, reuse = True)
 
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_fake_image_logits, 
-                                    labels=tf.ones_like(disc_fake_image)))
-        d_loss1 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_real_image_logits, 
-                                    labels=tf.ones_like(disc_real_image)))
-        d_loss2 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_wrong_image_logits, 
-                                    labels=tf.zeros_like(disc_wrong_image)))
-        d_loss3 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_fake_image_logits, 
-                                    labels=tf.zeros_like(disc_fake_image)))
+        g_loss = -tf.reduce_mean(disc_fake_image)
+        d_loss1 = -tf.reduce_mean(disc_real_image)
+        d_loss2 = tf.reduce_mean(disc_wrong_image)
+        d_loss3 = tf.reduce_mean(disc_fake_image)
 
         d_loss = d_loss1 + d_loss2 + d_loss3
 
         t_vars = tf.trainable_variables()
-        d_vars = [var for var in t_vars if 'd_' in var.name]
-        g_vars = [var for var in t_vars if 'g_' in var.name]
+        d_vars = [var.assign(tf.clip_by_value(var, -0.01, 0.01)) for var in t_vars if 'd_' in var.name]
+        g_vars = [var.assign(tf.clip_by_value(var, -0.01, 0.01)) for var in t_vars if 'g_' in var.name]
         
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
             d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
@@ -196,5 +192,5 @@ class GAN():
         
         h4 = ops.linear(tf.reshape(h3_new, [self.options['batch_size'], -1]), 1, 'd_h3_lin')
         
-        return tf.nn.sigmoid(h4), h4
+        return h4
 
