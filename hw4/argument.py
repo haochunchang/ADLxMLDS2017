@@ -6,6 +6,6 @@ def add_arguments(parser):
     parser.add_argument('--beta1', type=float, default=0.5, help='Momentum for Adam Update')
     parser.add_argument('--save_every', type=int, default=30, help='Save Model/Samples every x iterations over batches')
     parser.add_argument('--resume_model', type=str, default=None, help='Pre-Trained Model Path, to resume from')
-    parser.add_argument('--preload', type=bool, default=True, help='Pre-Loaded Data')
+    parser.add_argument('--preload', type=int, default=1, help='Pre-Loaded Data')
  
     return parser
