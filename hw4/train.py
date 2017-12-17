@@ -1,4 +1,5 @@
 import argparse, random, shutil, os
+from os.path import join
 import scipy.misc
 import tensorflow as tf
 import numpy as np
@@ -18,8 +19,8 @@ def train(args):
     np.random.seed(9487)
     # Load data
     img_size = 96*96*3
-    x_tags = utils.load_tags(args.data_dir, preload=args.preload)
-    x_imgs = utils.load_data(args.data_dir, preload=args.preload)
+    x_tags = utils.load_tags(args.data_dir, preload=bool(args.preload))
+    x_imgs = utils.load_data(args.data_dir, preload=bool(args.preload))
     x_train = x_imgs.reshape((x_imgs.shape[0], img_size))
     loaded_data = {'tags': x_tags, 'images': x_imgs}
   
@@ -101,7 +102,7 @@ def get_batch(batch_no, batch_size, loaded_data, gen):
     z_noise = np.random.uniform(-1, 1, [batch_size, 100])
     return real_images, wrong_images, caption_vectors, z_noise
 
-def save_for_vis(data_dir, real_images, generated_images, image_files):
+def save_for_vis(data_dir, real_images, generated_images):
     
     shutil.rmtree( join(data_dir, 'samples') )
     os.makedirs( join(data_dir, 'samples') )
