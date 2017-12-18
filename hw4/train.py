@@ -48,7 +48,7 @@ def train(args):
     for i in range(args.epochs):
         batch_no = 0
         index = np.arange(size)
-        np.shuffle(index)
+        np.random.shuffle(index)
         while batch_no*args.bz < size:
             real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data, gen)
             
