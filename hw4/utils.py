@@ -5,6 +5,8 @@ import numpy as np
 from skimage import io
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+from skip_thoughts import configuration
+from skip_thoughts import encoder_manager
 
 def load_data(path, preload=False):
     if not preload:
@@ -53,7 +55,30 @@ def load_tags(path, preload=False):
         print("Loading one hot encoding matrix...shape:{}".format(onehot_matrix.shape))
     return onehot_matrix
 
+def skip_encode(tags):
+    encoder = encoder_manager.EncoderManager()
+    encoder.load_model(configuration.model_config(),
+                        vocabulary_file=os.path.join('./skip_thoughts', 'pretrained', 'vocab.txt'),
+                        embedding_matrix_file=os.path.join('./skip_thoughts', 'pretrained', 'embeddings.npy'),
+                        checkpoint_path=os.path.join('./skip_thoughts', 'pretrained', 'model.ckpt-501424'))
+    encoded = encoder.encode(tags)
+    print(encoded)
+    print('Encoded by skip-thoughts model: shape {}'.foramt(encoded.shape))
+    #return encoded
 
 if __name__ == "__main__":
-    load_tags('./data', preload=False)
+    tags = pd.read_csv(os.path.join('./data', 'tags_clean.csv'), header=None, index_col=0)
+    tags['tags'] = tags.iloc[:,0].str.split('\t')
+    tags['tags'] = [[i.split(':')[0] for i in tag_list] for tag_list in tags['tags']]
+    tags = tags['tags']
+    
+    new_tags = []
+    for img_tag in tags.values.tolist():
+        new_tag = ''
+        for t in img_tag:
+            new_tag = new_tag + t + ','
+        new_tags.append(new_tag)
+    skip_encode(new_tags)
+    
+    #load_tags('./data', preload=False)
     #load_data('./data', preload=True)
