@@ -25,7 +25,7 @@ def train(args):
     loaded_data = {'tags': x_tags, 'images': x_imgs}
   
     size = x_imgs.shape[0]
-    config = tf.ConfigProto(device_count={'GPU':0})
+    config = tf.ConfigProto(device_count={'GPU':1})
     output_path = './outputs'
     model_path = './models/'
     if not os.path.exists(output_path):

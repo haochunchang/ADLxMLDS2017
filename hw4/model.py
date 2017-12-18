@@ -15,7 +15,7 @@ class GAN():
         self.beta1 = args.beta1
 
         self.z_size = 100
-        self.txt_dim = 17599 
+        self.txt_dim = 10000 
         self.img_size = 96
         
         self.options = {
@@ -51,10 +51,10 @@ class GAN():
         disc_wrong_image = self.discriminator(t_wrong_image, t_real_caption, reuse = True)
         disc_fake_image = self.discriminator(fake_image, t_real_caption, reuse = True)
 
-        g_loss = -tf.reduce_mean(disc_fake_image)
-        d_loss1 = -tf.reduce_mean(disc_real_image)
-        d_loss2 = tf.reduce_mean(disc_wrong_image)
-        d_loss3 = tf.reduce_mean(disc_fake_image)
+        g_loss = tf.reduce_mean(disc_fake_image)
+        d_loss1 = tf.reduce_mean(disc_real_image)
+        d_loss2 = -tf.reduce_mean(disc_wrong_image)
+        d_loss3 = -tf.reduce_mean(disc_fake_image)
 
         d_loss = d_loss1 + d_loss2 + d_loss3
 

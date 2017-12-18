@@ -2,8 +2,9 @@
 import os, pickle, glob
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
 from skimage import io
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
 
 def load_data(path, preload=False):
     if not preload:
@@ -25,12 +26,26 @@ def load_tags(path, preload=False):
         tags['tags'] = tags.iloc[:,0].str.split('\t')
         tags['tags'] = [[i.split(':')[0] for i in tag_list] for tag_list in tags['tags']]
         tags = tags['tags']
-    
-        # convert to onehot encoding
-        le = load_label_encoder(tags)
-        int_tags = tags.apply(le.transform)
-        onehot_tags = int_tags.apply(lambda x: convert_onehot(x, len(le.classes_)))
-        onehot_matrix = np.array(onehot_tags.values.tolist())
+           
+        # Train tokenizer
+        tok = Tokenizer(num_words=5000)
+        tags_lst = []
+        for t in tags.values.tolist():
+            tags_lst += t
+        tok.fit_on_texts(tags_lst)
+        with open("tok.pkl","wb") as l:
+            pickle.dump(tok, l)
+        
+        # Convert tags to word index
+        new_tags = []
+        for img_tag in tags.values.tolist():
+            new_tag = ''
+            for t in img_tag:
+                new_tag = new_tag + t + ','
+            new_tags.append(new_tag)
+        
+        onehot_matrix = tok.texts_to_matrix(new_tags, mode='binary')
+        print(onehot_matrix)
         print("Converting one hot encoding...One-hot matrix shape:{}".format(onehot_matrix.shape))
         np.save('tag_onehot_matrix', onehot_matrix)
     else:
@@ -38,26 +53,7 @@ def load_tags(path, preload=False):
         print("Loading one hot encoding matrix...shape:{}".format(onehot_matrix.shape))
     return onehot_matrix
 
-def load_label_encoder(label):
-    try:
-        with open("le.pkl",'rb') as l:
-            return pickle.load(l);
-    except:
-        le = LabelEncoder()
-        labels = []
-        for dlabel in label.values.tolist():
-            labels += dlabel
-        le.fit(labels)
-        with open("le.pkl","wb") as l:
-            pickle.dump(le, l)
-        return le
 
-def convert_onehot(label, num_class):
-    # input: example: [3, 14], integer labels
-    newlabel = np.zeros(num_class)
-    for l in label:
-        newlabel[l] = 1
-    return newlabel
- 
 if __name__ == "__main__":
-    load_tags('./data', preload=True)
+    load_tags('./data', preload=False)
+    #load_data('./data', preload=True)
