@@ -96,7 +96,7 @@ def get_batch(index, batch_no, batch_size, loaded_data, gen):
     real_images = loaded_data['images'][image_ids, :, :, :]
     caption_vectors = loaded_data['tags'][image_ids, :]
 
-    wrong_ids = random.sample(index, k=len(image_ids))
+    wrong_ids = np.random.choice(index, size=len(image_ids))
     wrong_images = loaded_data['images'][wrong_ids, :, :, :]
         
     z_noise = np.random.uniform(-1, 1, [len(image_ids), 100])
