@@ -108,17 +108,16 @@ def get_batch(index, batch_no, batch_size, loaded_data, gen):
 
 def save_for_vis(data_dir, real_images, generated_images):
     
-    shutil.rmtree( join(data_dir, 'samples') )
-    os.makedirs( join(data_dir, 'samples') )
+    if not os.path.exists( join(data_dir, 'samples')):
+        os.makedirs( join(data_dir, 'samples') )
 
-    for i in range(0, real_images.shape[0]):
+    for i in range(0, 10):
         real_image_255 = np.zeros( (96,96,3), dtype=np.uint8)
         real_images_255 = (real_images[i,:,:,:])
         scipy.misc.imsave( join(data_dir, 'samples/{}.jpg'.format(i)) , real_images_255)
 
         fake_image_255 = np.zeros( (96,96,3), dtype=np.uint8)
         fake_images_255 = (generated_images[i,:,:,:])
-        fake_images_255 = fake_images_255.resize((64,64,3))
         scipy.misc.imsave(join(data_dir, 'samples/fake_image_{}.jpg'.format(i)), fake_images_255)
 
 if __name__ == '__main__':
