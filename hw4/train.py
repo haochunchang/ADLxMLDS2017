@@ -23,6 +23,8 @@ def train(args):
     loaded_data = {'tags': x_tags, 'images': x_imgs}
   
     size = x_imgs.shape[0]
+    num_update_d = 5
+    num_update_g = 2
     config = tf.ConfigProto(device_count={'GPU':0})
     output_path = './outputs'
     model_path = './models/'
@@ -52,33 +54,27 @@ def train(args):
         while batch_no*args.bz < size:
             real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data, gen)
             
-            # update discriminator
-            check_ts = [ checks['d_loss1'] , checks['d_loss2'], checks['d_loss3']]
-            _, d_loss, gen, d1, d2, d3 = sess.run([optims['d_optim'], loss['d_loss'], outputs['generator']] + check_ts,
-                feed_dict = {
-                    input_tensors['t_real_image'] : real_images,
-                    input_tensors['t_wrong_image'] : wrong_images,
-                    input_tensors['t_real_caption'] : caption_vectors,
-                    input_tensors['t_z'] : z_noise
-                })
-            #print("d1: {}, d2: {}, d3:{}, D:{}\n".format(d1, d2, d3, d_loss))
-            # update generator
-            _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
-                feed_dict = {
-                    input_tensors['t_real_image'] : real_images,
-                    input_tensors['t_wrong_image'] : wrong_images,
-                    input_tensors['t_real_caption'] : caption_vectors,
-                    input_tensors['t_z'] : z_noise
-                })
+            for i in range(num_update_d):
+                # update discriminator
+                check_ts = [ checks['d_loss1'] , checks['d_loss2'], checks['d_loss3']]
+                _, d_loss, gen, d1, d2, d3 = sess.run([optims['d_optim'], loss['d_loss'], outputs['generator']] + check_ts,
+                    feed_dict = {
+                        input_tensors['t_real_image'] : real_images,
+                        input_tensors['t_wrong_image'] : wrong_images,
+                        input_tensors['t_real_caption'] : caption_vectors,
+                        input_tensors['t_z'] : z_noise
+                    })
+            print("d1: {}, d2: {}, d3:{}, D:{}\n".format(d1, d2, d3, d_loss))
+            for i in range(num_update_g):
+                # update generator
+                _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
+                    feed_dict = {
+                        input_tensors['t_real_image'] : real_images,
+                        input_tensors['t_wrong_image'] : wrong_images,
+                        input_tensors['t_real_caption'] : caption_vectors,
+                        input_tensors['t_z'] : z_noise
+                    })
             
-            # update generator twice, to make sure d_loss does not go to 0
-            _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
-                feed_dict = {
-                    input_tensors['t_real_image'] : real_images,
-                    input_tensors['t_wrong_image'] : wrong_images,
-                    input_tensors['t_real_caption'] : caption_vectors,
-                    input_tensors['t_z'] : z_noise
-                })
             batch_no += 1
             if (batch_no % args.save_every) == 0:
                 print("d_loss:{}, g_loss:{}, batch:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, i))
