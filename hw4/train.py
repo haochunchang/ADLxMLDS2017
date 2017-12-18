@@ -18,10 +18,8 @@ def train(args):
     random.seed(9487)
     np.random.seed(9487)
     # Load data
-    img_size = 96*96*3
     x_tags = utils.load_tags(args.data_dir, preload=bool(args.preload))
     x_imgs = utils.load_data(args.data_dir, preload=bool(args.preload))
-    x_train = x_imgs.reshape((x_imgs.shape[0], img_size))
     loaded_data = {'tags': x_tags, 'images': x_imgs}
   
     size = x_imgs.shape[0]
@@ -49,8 +47,10 @@ def train(args):
     # Start Training Algorithm
     for i in range(args.epochs):
         batch_no = 0
+        index = np.arange(size)
+        np.shuffle(index)
         while batch_no*args.bz < size:
-            real_images, wrong_images, caption_vectors, z_noise = get_batch(batch_no, args.bz, loaded_data, gen)
+            real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data, gen)
             
             # update discriminator
             check_ts = [ checks['d_loss1'] , checks['d_loss2'], checks['d_loss3']]
@@ -88,10 +88,14 @@ def train(args):
         if i%10 == 0:
             save_path = saver.save(sess, os.path.join(model_path, "model_after_epoch_{}.ckpt".format(i)))
 
-def get_batch(batch_no, batch_size, loaded_data, gen):
+def get_batch(index, batch_no, batch_size, loaded_data, gen):
 
     total_size = loaded_data['tags'].shape[0]
-    image_ids = random.sample(range(total_size), k=batch_size)
+    if (batch_no+1)*batch_size > total_size:
+        batch_end = total_size - 1
+    else:
+        batch_end = (batch_no+1)*batch_size
+    image_ids = index[batch_size*batch_no:batch_end]
 
     real_images = loaded_data['images'][image_ids, :, :, :]
     wrong_images = np.zeros((batch_size, 96, 96, 3))
