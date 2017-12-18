@@ -14,7 +14,7 @@ def load_data(path, preload=False):
         img_all_path = sorted(glob.glob(os.path.join(img_path, '*.jpg')), 
                                 key=lambda x: int(x.split('/')[-1].split('.')[0]))
         imgs = io.imread_collection(img_all_path)
-        imgs = io.concatenate_images(imgs)
+        imgs = io.concatenate_images(imgs) / 255
         print("Image matrix shape:{}".format(imgs.shape))
         np.save('img_matrix', imgs)
     else:
