@@ -30,7 +30,7 @@ def load_tags(path, preload=False):
         tags = tags['tags']
            
         # Train tokenizer
-        tok = Tokenizer(num_words=3000)
+        tok = Tokenizer(num_words=1000)
         tags_lst = []
         for t in tags.values.tolist():
             tags_lst += t

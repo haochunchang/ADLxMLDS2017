@@ -15,7 +15,7 @@ class GAN():
         self.beta1 = args.beta1
 
         self.z_size = 100
-        self.txt_dim = 3000 
+        self.txt_dim = 1000 
         self.img_size = 96
         
         self.options = {
@@ -62,8 +62,8 @@ class GAN():
         d_vars = [var for var in t_vars if 'd_' in var.name]
         g_vars = [var for var in t_vars if 'g_' in var.name]
         
-        with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-            #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
+        with tf.variable_scope(tf.get_variable_scope()):
+            #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(-d_loss, var_list=d_vars) 
             #g_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(g_loss, var_list=g_vars) 
 
             d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(-d_loss, var_list=d_vars) 
