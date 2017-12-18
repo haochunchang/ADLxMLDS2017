@@ -15,7 +15,7 @@ class GAN():
         self.beta1 = args.beta1
 
         self.z_size = 100
-        self.txt_dim = 5000 
+        self.txt_dim = 3000 
         self.img_size = 96
         
         self.options = {
@@ -51,7 +51,7 @@ class GAN():
         disc_wrong_image = self.discriminator(t_wrong_image, t_real_caption, reuse = True)
         disc_fake_image = self.discriminator(fake_image, t_real_caption, reuse = True)
 
-        g_loss = tf.reduce_mean(disc_fake_image)
+        g_loss = -tf.reduce_mean(disc_fake_image)
         d_loss1 = tf.reduce_mean(disc_real_image)
         d_loss2 = -tf.reduce_mean(disc_wrong_image)
         d_loss3 = -tf.reduce_mean(disc_fake_image)
@@ -63,9 +63,12 @@ class GAN():
         g_vars = [var for var in t_vars if 'g_' in var.name]
         
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-            d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
-            g_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(g_loss, var_list=g_vars) 
+            #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
+            #g_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(g_loss, var_list=g_vars) 
 
+            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(-d_loss, var_list=d_vars) 
+            g_optim = tf.train.RMSPropOptimizer(self.lr).minimize(g_loss, var_list=g_vars) 
+        
         optims = {
             #'d_optim': d_optim,
             'g_optim': g_optim,
