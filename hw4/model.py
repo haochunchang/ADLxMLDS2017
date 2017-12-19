@@ -40,10 +40,10 @@ class GAN():
 
     def build_model(self):
         img_size = self.img_size
-        t_real_image = tf.placeholder('float32', [self.bz, img_size, img_size, 3 ], name = 'real_image')
-        t_wrong_image = tf.placeholder('float32', [self.bz, img_size, img_size, 3 ], name = 'wrong_image')
-        t_real_caption = tf.placeholder('float32', [self.bz, self.txt_dim], name = 'real_caption_input')
-        t_z = tf.placeholder('float32', [self.bz, self.z_size])
+        t_real_image = tf.placeholder('float32', [None, img_size, img_size, 3 ], name = 'real_image')
+        t_wrong_image = tf.placeholder('float32', [None, img_size, img_size, 3 ], name = 'wrong_image')
+        t_real_caption = tf.placeholder('float32', [None, self.txt_dim], name = 'real_caption_input')
+        t_z = tf.placeholder('float32', [None, self.z_size])
 
         fake_image = self.generator(t_z, t_real_caption)
 
@@ -109,8 +109,8 @@ class GAN():
     
     def build_generator(self):
         img_size = self.img_size
-        t_real_caption = tf.placeholder('float32', [self.bz, self.txt_dim], name = 'real_caption_input')
-        t_z = tf.placeholder('float32', [self.bz, self.z_size])
+        t_real_caption = tf.placeholder('float32', [None, self.txt_dim], name = 'real_caption_input')
+        t_z = tf.placeholder('float32', [None, self.z_size])
         fake_image = self.sampler(t_z, t_real_caption)
         
         input_tensors = {

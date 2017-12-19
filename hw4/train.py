@@ -25,7 +25,7 @@ def train(args):
     size = x_imgs.shape[0]
     num_update_d = 5
     num_update_g = 2
-    config = tf.ConfigProto(device_count={'GPU':0})
+    config = tf.ConfigProto(device_count={'GPU':1})
     output_path = './outputs'
     model_path = './models/'
     if not os.path.exists(output_path):
