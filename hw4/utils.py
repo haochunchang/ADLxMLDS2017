@@ -30,7 +30,7 @@ def load_tags(path, preload=False):
         tags = tags['tags']
            
         # Train tokenizer
-        tok = Tokenizer(num_words=1000)
+        tok = Tokenizer(num_words=2400)
         tags_lst = []
         for t in tags.values.tolist():
             tags_lst += t
@@ -62,9 +62,8 @@ def skip_encode(tags):
                         embedding_matrix_file=os.path.join('./skip_thoughts', 'pretrained', 'embeddings.npy'),
                         checkpoint_path=os.path.join('./skip_thoughts', 'pretrained', 'model.ckpt-501424'))
     encoded = encoder.encode(tags)
-    print(encoded)
-    print('Encoded by skip-thoughts model: shape {}'.foramt(encoded.shape))
-    #return encoded
+    print('Encoded by skip-thoughts model: shape {}'.foramt(encoded.shape)) 
+    return encoded
 
 if __name__ == "__main__":
     tags = pd.read_csv(os.path.join('./data', 'tags_clean.csv'), header=None, index_col=0)

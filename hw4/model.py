@@ -15,7 +15,7 @@ class GAN():
         self.beta1 = args.beta1
 
         self.z_size = 100
-        self.txt_dim = 1000 
+        self.txt_dim = 2400 
         self.img_size = 96
         
         self.options = {
