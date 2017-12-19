@@ -40,21 +40,21 @@ class GAN():
 
     def build_model(self):
         img_size = self.img_size
-        t_real_image = tf.placeholder('float32', [None, img_size, img_size, 3 ], name = 'real_image')
-        t_wrong_image = tf.placeholder('float32', [None, img_size, img_size, 3 ], name = 'wrong_image')
-        t_real_caption = tf.placeholder('float32', [None, self.txt_dim], name = 'real_caption_input')
-        t_z = tf.placeholder('float32', [None, self.z_size])
+        t_real_image = tf.placeholder('float32', [self.bz, img_size, img_size, 3 ], name = 'real_image')
+        t_wrong_image = tf.placeholder('float32', [self.bz, img_size, img_size, 3 ], name = 'wrong_image')
+        t_real_caption = tf.placeholder('float32', [self.bz, self.txt_dim], name = 'real_caption_input')
+        t_z = tf.placeholder('float32', [self.bz, self.z_size])
 
         fake_image = self.generator(t_z, t_real_caption)
 
         disc_real_image = self.discriminator(t_real_image, t_real_caption)
         disc_wrong_image = self.discriminator(t_wrong_image, t_real_caption, reuse = True)
         disc_fake_image = self.discriminator(fake_image, t_real_caption, reuse = True)
-
+        
         g_loss = -tf.reduce_mean(disc_fake_image)
-        d_loss1 = tf.reduce_mean(disc_real_image)
-        d_loss2 = -tf.reduce_mean(disc_wrong_image)
-        d_loss3 = -tf.reduce_mean(disc_fake_image)
+        d_loss1 = -tf.reduce_mean(disc_real_image)
+        d_loss2 = tf.reduce_mean(disc_wrong_image)
+        d_loss3 = tf.reduce_mean(disc_fake_image)
 
         d_loss = d_loss1 + d_loss2 + d_loss3
 
@@ -63,10 +63,10 @@ class GAN():
         g_vars = [var for var in t_vars if 'g_' in var.name]
         
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-            #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(-d_loss, var_list=d_vars) 
+            #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
             #g_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(g_loss, var_list=g_vars) 
 
-            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(-d_loss, var_list=d_vars) 
+            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(d_loss, var_list=d_vars) 
             g_optim = tf.train.RMSPropOptimizer(self.lr).minimize(g_loss, var_list=g_vars) 
         
         optims = {
@@ -109,8 +109,8 @@ class GAN():
     
     def build_generator(self):
         img_size = self.img_size
-        t_real_caption = tf.placeholder('float32', [None, self.txt_dim], name = 'real_caption_input')
-        t_z = tf.placeholder('float32', [None, self.z_size])
+        t_real_caption = tf.placeholder('float32', [self.options['batch_size'], self.txt_dim], name = 'real_caption_input')
+        t_z = tf.placeholder('float32', [self.options['batch_size'], self.z_size])
         fake_image = self.sampler(t_z, t_real_caption)
         
         input_tensors = {

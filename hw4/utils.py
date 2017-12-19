@@ -45,8 +45,9 @@ def load_tags(path, preload=False):
             for t in img_tag:
                 new_tag = new_tag + t + ','
             new_tags.append(new_tag)
-        
-        onehot_matrix = tok.texts_to_matrix(new_tags, mode='binary')
+        print(new_tags)
+        #onehot_matrix = tok.texts_to_matrix(new_tags, mode='tfidf')
+        onehot_matrix = skip_encode(new_tags)
         print(onehot_matrix)
         print("Converting one hot encoding...One-hot matrix shape:{}".format(onehot_matrix.shape))
         np.save('tag_onehot_matrix', onehot_matrix)
@@ -56,13 +57,14 @@ def load_tags(path, preload=False):
     return onehot_matrix
 
 def skip_encode(tags):
+    print("Start encode with skip-thought\n")
     encoder = encoder_manager.EncoderManager()
     encoder.load_model(configuration.model_config(),
                         vocabulary_file=os.path.join('./skip_thoughts', 'pretrained', 'vocab.txt'),
                         embedding_matrix_file=os.path.join('./skip_thoughts', 'pretrained', 'embeddings.npy'),
                         checkpoint_path=os.path.join('./skip_thoughts', 'pretrained', 'model.ckpt-501424'))
     encoded = encoder.encode(tags)
-    print('Encoded by skip-thoughts model: shape {}'.foramt(encoded.shape)) 
+    print('Encoded by skip-thoughts model: shape {}\n'.format(encoded.shape)) 
     return encoded
 
 if __name__ == "__main__":

@@ -88,18 +88,19 @@ def get_batch(index, batch_no, batch_size, loaded_data, gen):
 
     total_size = loaded_data['tags'].shape[0]
     if (batch_no+1)*batch_size > total_size:
-        batch_end = total_size - 1
+        batch_end = total_size
+        image_ids = index[batch_end-batch_size:batch_end]
     else:
         batch_end = (batch_no+1)*batch_size
-    image_ids = index[batch_size*batch_no:batch_end]
+        image_ids = index[batch_size*batch_no:batch_end]
 
     real_images = loaded_data['images'][image_ids, :, :, :]
     caption_vectors = loaded_data['tags'][image_ids, :]
 
-    wrong_ids = np.random.choice(index, size=len(image_ids))
+    wrong_ids = np.random.choice(index, size=batch_size)
     wrong_images = loaded_data['images'][wrong_ids, :, :, :]
         
-    z_noise = np.random.uniform(-1, 1, [len(image_ids), 100])
+    z_noise = np.random.uniform(-1, 1, [batch_size, 100])
     return real_images, wrong_images, caption_vectors, z_noise
 
 def save_for_vis(data_dir, real_images, generated_images):
