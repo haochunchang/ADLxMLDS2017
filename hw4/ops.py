@@ -33,7 +33,7 @@ class batch_norm(object):
                     
                 with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
                     ema_apply_op = self.ema.apply([batch_mean, batch_var])
-                    self.ema_mean, self.ema_var = self.ema.average(batch_mean), self.ema.average(batch_var)
+                self.ema_mean, self.ema_var = self.ema.average(batch_mean), self.ema.average(batch_var)
 
                 with tf.control_dependencies([ema_apply_op]):
                     mean, var = tf.identity(batch_mean), tf.identity(batch_var)
