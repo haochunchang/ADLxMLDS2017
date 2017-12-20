@@ -47,6 +47,7 @@ def train(args):
         saver.restore(sess, args.resume_model)
 
     index = np.arange(size)
+    d_loss_his = []
     # Start Training Algorithm
     for i in range(args.epochs):
         batch_no = 0
@@ -64,7 +65,8 @@ def train(args):
                         input_tensors['t_real_caption'] : caption_vectors,
                         input_tensors['t_z'] : z_noise
                     })
-            print("real image dloss: {}, wrong image dloss: {}, fake image dloss:{}, D:{}\n".format(d1, d2, d3, d_loss))
+                d_loss_his.append(d_loss)
+            print("Last {} average loss of D: {}".format(num_update_d, np.mean(d_loss_his[-5:])))
             for i in range(num_update_g):
                 # update generator
                 _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
