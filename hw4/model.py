@@ -57,7 +57,7 @@ class GAN():
         d_loss2 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_wrong_image_logits, labels=tf.zeros_like(disc_wrong_image)))
         d_loss3 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_fake_image_logits, labels=tf.zeros_like(disc_fake_image)))
         '''
-        g_loss = -tf.reduce_mean(disc_fake_image)
+        g_loss = tf.reduce_mean(disc_fake_image)
     
         d_loss1 = tf.reduce_mean(disc_real_image)
         d_loss2 = -tf.reduce_mean(disc_wrong_image)
@@ -74,7 +74,7 @@ class GAN():
             #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
             #g_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(g_loss, var_list=g_vars) 
 
-            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(-d_loss, var_list=d_vars) 
+            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(d_loss, var_list=d_vars) 
             g_optim = tf.train.RMSPropOptimizer(self.lr).minimize(g_loss, var_list=g_vars) 
         
         optims = {
