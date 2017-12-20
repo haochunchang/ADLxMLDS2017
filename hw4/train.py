@@ -25,7 +25,7 @@ def train(args):
     loaded_data = {'tags': x_tags, 'images': x_imgs}
   
     size = x_imgs.shape[0]
-    num_update_d = 1
+    num_update_d = 5
     num_update_g = 2
     config = tf.ConfigProto(device_count={'GPU':1})
     output_path = './outputs'
@@ -82,9 +82,9 @@ def train(args):
                         input_tensors['t_z'] : z_noise
                     })
                 g_loss_his.append(g_loss) 
-            print("Last {} average loss of D: {}, G:{}".format(10, np.mean(d_loss_his[-10:]), np.mean(g_loss_his[-10:])))
             batch_no += 1
             if (batch_no % args.save_every) == 0:
+                print("Last {} average loss of D: {}, G:{}".format(30, np.mean(d_loss_his[-30:]), np.mean(g_loss_his[-30:])))
                 print("d_loss:{}, g_loss:{}, batch:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, i))
                 print("Saving Images, Model")
                 save_for_vis(output_path, real_images, gen)
