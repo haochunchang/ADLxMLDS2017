@@ -24,7 +24,7 @@ def train(args):
   
     size = x_imgs.shape[0]
     num_update_d = 5
-    num_update_g = 2
+    num_update_g = 1
     config = tf.ConfigProto(device_count={'GPU':1})
     output_path = './outputs'
     model_path = './models/'
@@ -45,14 +45,13 @@ def train(args):
     if args.resume_model:
         saver.restore(sess, args.resume_model)
 
-    gen = np.random.uniform(-1, 1, (args.bz, 96, 96, 3))
+    index = np.arange(size)
     # Start Training Algorithm
     for i in range(args.epochs):
         batch_no = 0
-        index = np.arange(size)
         np.random.shuffle(index)
         while batch_no*args.bz < size:
-            real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data, gen)
+            real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data)
             
             for i in range(num_update_d):
                 # update discriminator
@@ -64,7 +63,7 @@ def train(args):
                         input_tensors['t_real_caption'] : caption_vectors,
                         input_tensors['t_z'] : z_noise
                     })
-            print("d1: {}, d2: {}, d3:{}, D:{}\n".format(d1, d2, d3, d_loss))
+            print("real image dloss: {}, wrong image dloss: {}, fake image dloss:{}, D:{}\n".format(d1, d2, d3, d_loss))
             for i in range(num_update_g):
                 # update generator
                 _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
@@ -84,7 +83,7 @@ def train(args):
         if i%10 == 0:
             save_path = saver.save(sess, os.path.join(model_path, "model_after_epoch_{}.ckpt".format(i)))
 
-def get_batch(index, batch_no, batch_size, loaded_data, gen):
+def get_batch(index, batch_no, batch_size, loaded_data):
 
     total_size = loaded_data['tags'].shape[0]
     if (batch_no+1)*batch_size > total_size:
@@ -100,7 +99,7 @@ def get_batch(index, batch_no, batch_size, loaded_data, gen):
     wrong_ids = np.random.choice(index, size=batch_size)
     wrong_images = loaded_data['images'][wrong_ids, :, :, :]
         
-    z_noise = np.random.uniform(-1, 1, [batch_size, 100])
+    z_noise = np.random.normal(size=[batch_size, 100])
     return real_images, wrong_images, caption_vectors, z_noise
 
 def save_for_vis(data_dir, real_images, generated_images):

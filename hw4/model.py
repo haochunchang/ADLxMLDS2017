@@ -16,7 +16,7 @@ class GAN():
 
         self.z_size = 100
         self.txt_dim = 2400 
-        self.img_size = 96
+        self.img_size = 64
         
         self.options = {
             'z_dim' : self.z_size,
@@ -52,9 +52,9 @@ class GAN():
         disc_fake_image = self.discriminator(fake_image, t_real_caption, reuse = True)
         
         g_loss = -tf.reduce_mean(disc_fake_image)
-        d_loss1 = -tf.reduce_mean(disc_real_image)
-        d_loss2 = tf.reduce_mean(disc_wrong_image)
-        d_loss3 = tf.reduce_mean(disc_fake_image)
+        d_loss1 = tf.reduce_mean(disc_real_image)
+        d_loss2 = -tf.reduce_mean(disc_wrong_image)
+        d_loss3 = -tf.reduce_mean(disc_fake_image)
 
         d_loss = d_loss1 + d_loss2 + d_loss3
 
@@ -66,7 +66,7 @@ class GAN():
             #d_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(d_loss, var_list=d_vars) 
             #g_optim = tf.train.AdamOptimizer(self.lr, beta1=self.beta1).minimize(g_loss, var_list=g_vars) 
 
-            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(d_loss, var_list=d_vars) 
+            d_optim = tf.train.RMSPropOptimizer(self.lr).minimize(-d_loss, var_list=d_vars) 
             g_optim = tf.train.RMSPropOptimizer(self.lr).minimize(g_loss, var_list=g_vars) 
         
         optims = {
