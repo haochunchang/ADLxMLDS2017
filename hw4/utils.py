@@ -3,7 +3,6 @@ import os, pickle, glob
 import pandas as pd
 import numpy as np
 from skimage import io
-from skimage.transform import resize
 from skip_thoughts import configuration
 from skip_thoughts import encoder_manager
 
@@ -14,7 +13,6 @@ def load_data(path, preload=False):
                                 key=lambda x: int(x.split('/')[-1].split('.')[0]))
         imgs = io.imread_collection(img_all_path)
         imgs = io.concatenate_images(imgs)
-        imgs = resize(imgs, (64,64,3))
         imgs = imgs / 127.5 - 1
         print("Image matrix shape:{}".format(imgs.shape))
         np.save('img_matrix', imgs)
