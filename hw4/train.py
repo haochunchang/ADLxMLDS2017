@@ -48,6 +48,7 @@ def train(args):
 
     index = np.arange(size)
     d_loss_his = []
+    g_loss_his = []
     # Start Training Algorithm
     for i in range(args.epochs):
         batch_no = 0
@@ -66,7 +67,6 @@ def train(args):
                         input_tensors['t_z'] : z_noise
                     })
                 d_loss_his.append(d_loss)
-            print("Last {} average loss of D: {}".format(10, np.mean(d_loss_his[-10:])))
             for i in range(num_update_g):
                 # update generator
                 _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
@@ -76,7 +76,8 @@ def train(args):
                         input_tensors['t_real_caption'] : caption_vectors,
                         input_tensors['t_z'] : z_noise
                     })
-            
+                g_loss_his.append(g_loss) 
+            print("Last {} average loss of D: {}, G:{}".format(10, np.mean(d_loss_his[-10:]), np.mean(g_loss_his[-10:])))
             batch_no += 1
             if (batch_no % args.save_every) == 0:
                 print("d_loss:{}, g_loss:{}, batch:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, i))
