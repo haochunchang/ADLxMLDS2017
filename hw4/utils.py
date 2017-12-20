@@ -13,7 +13,7 @@ def load_data(path, preload=False):
                                 key=lambda x: int(x.split('/')[-1].split('.')[0]))
         imgs = io.imread_collection(img_all_path)
         imgs = io.concatenate_images(imgs)
-        imgs = imgs / 127.5 - 1
+        imgs = imgs / 255.0
         print("Image matrix shape:{}".format(imgs.shape))
         np.save('img_matrix', imgs)
     else:
