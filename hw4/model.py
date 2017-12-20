@@ -16,7 +16,7 @@ class GAN():
 
         self.z_size = 100
         self.txt_dim = 2400 
-        self.img_size = 64
+        self.img_size = 96
         
         self.options = {
             'z_dim' : self.z_size,

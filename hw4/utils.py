@@ -52,7 +52,7 @@ def skip_encode(tags):
                         vocabulary_file=os.path.join('./skip_thoughts', 'pretrained', 'vocab.txt'),
                         embedding_matrix_file=os.path.join('./skip_thoughts', 'pretrained', 'embeddings.npy'),
                         checkpoint_path=os.path.join('./skip_thoughts', 'pretrained', 'model.ckpt-501424'))
-    encoded = encoder.encode(tags)
+    encoded = encoder.encode(tags, use_norm=False)
     print('Encoded by skip-thoughts model: shape {}\n'.format(encoded.shape)) 
     return encoded
 

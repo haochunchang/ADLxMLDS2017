@@ -3,6 +3,7 @@ from os.path import join
 import scipy.misc
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 import utils
 import model
