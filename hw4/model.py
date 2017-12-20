@@ -53,7 +53,7 @@ class GAN():
         
         g_loss = -tf.reduce_mean(disc_fake_image)
         d_loss1 = tf.reduce_mean(tf.square(tf.abs(disc_real_image - tf.ones([self.bz]))))
-        d_loss2 = -tf.reduce_mean(tf.square(tf.abs(disc_wrong_image - tf.zeros([self.bz])))
+        d_loss2 = -tf.reduce_mean(tf.square(tf.abs(disc_wrong_image - tf.zeros([self.bz]))))
         d_loss3 = -tf.reduce_mean(tf.square(tf.abs(disc_fake_image - tf.zeros([self.bz]))))
 
         d_loss = d_loss1 + d_loss2 + d_loss3
