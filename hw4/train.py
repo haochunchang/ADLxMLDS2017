@@ -4,6 +4,7 @@ import scipy.misc
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+import skimage.util
 
 import utils
 import model
@@ -55,7 +56,11 @@ def train(args):
         np.random.shuffle(index)
         while batch_no*args.bz < size:
             real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data)
-            
+            if batch_no < 25 or batch_no % 500 == 0:
+                num_update_d = 25
+            else:
+                num_update_d = 5
+
             for i in range(num_update_d):
                 # update discriminator
                 check_ts = [ checks['d_loss1'] , checks['d_loss2'], checks['d_loss3']]
@@ -102,6 +107,7 @@ def get_batch(index, batch_no, batch_size, loaded_data):
 
     wrong_ids = np.random.choice(index, size=batch_size)
     wrong_images = loaded_data['images'][wrong_ids, :, :, :]
+    wrong_images = skimage.util.random_noise(wrong_images)
         
     z_noise = np.random.normal(size=[batch_size, 100])
     return real_images, wrong_images, caption_vectors, z_noise
