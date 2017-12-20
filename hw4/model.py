@@ -51,10 +51,10 @@ class GAN():
         disc_wrong_image = self.discriminator(t_wrong_image, t_real_caption, reuse = True)
         disc_fake_image = self.discriminator(fake_image, t_real_caption, reuse = True)
         
-        g_loss = -tf.reduce_mean(tf.nn.l2_loss(disc_fake_image - tf.zeros([self.bz]))))
-        d_loss1 = tf.reduce_mean(tf.nn.l2_loss(disc_real_image - tf.ones([self.bz]))))
-        d_loss2 = -tf.reduce_mean(tf.nn.l2_loss(disc_wrong_image - tf.zeros([self.bz]))))
-        d_loss3 = -tf.reduce_mean(tf.nn.l2_loss(disc_fake_image - tf.zeros([self.bz]))))
+        g_loss = -tf.reduce_mean(tf.nn.l2_loss(disc_fake_image - tf.zeros([self.bz])))
+        d_loss1 = tf.reduce_mean(tf.nn.l2_loss(disc_real_image - tf.ones([self.bz])))
+        d_loss2 = -tf.reduce_mean(tf.nn.l2_loss(disc_wrong_image - tf.zeros([self.bz])))
+        d_loss3 = -tf.reduce_mean(tf.nn.l2_loss(disc_fake_image - tf.zeros([self.bz])))
 
         d_loss = d_loss1 + d_loss2 + d_loss3
 
