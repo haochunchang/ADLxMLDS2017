@@ -66,7 +66,7 @@ def train(args):
                         input_tensors['t_z'] : z_noise
                     })
                 d_loss_his.append(d_loss)
-            print("Last {} average loss of D: {}".format(num_update_d, np.mean(d_loss_his[-5:])))
+            print("Last {} average loss of D: {}".format(10, np.mean(d_loss_his[-10:])))
             for i in range(num_update_g):
                 # update generator
                 _, g_loss, gen = sess.run([optims['g_optim'], loss['g_loss'], outputs['generator']],
