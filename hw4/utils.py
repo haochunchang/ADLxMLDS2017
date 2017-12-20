@@ -14,7 +14,7 @@ def load_data(path, preload=False):
                                 key=lambda x: int(x.split('/')[-1].split('.')[0]))
         imgs = io.imread_collection(img_all_path)
         imgs = io.concatenate_images(imgs)
-        imgs = resize(imgs, (64,64))
+        imgs = resize(imgs, (64,64,3))
         imgs = imgs / 127.5 - 1
         print("Image matrix shape:{}".format(imgs.shape))
         np.save('img_matrix', imgs)
