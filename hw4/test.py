@@ -11,10 +11,11 @@ gan = model.GAN(args)
 _, _, _, _, _ = gan.build_model()
     
 # Launch session
-sess = tf.InteractiveSession()
+config = tf.ConfigProto(device_count={'GPU':0}) 
+sess = tf.InteractiveSession(config=config)
 sess.run(tf.global_variables_initializer())
 saver = tf.train.Saver()
-saver.restore(sess, './models/')
+saver.restore(sess, './models/latest_model.ckpt')
 
 input_tensors, outputs = gan.build_generator()
 z_noise = np.random.normal([1, 100])
