@@ -50,7 +50,7 @@ def train(args):
     index = np.arange(size)
     d_loss_his = []
     g_loss_his = []
-    i = 1
+    epoch = 1
     # Start Training Algorithm
     while True:
         print('Starting Epoch: {}'.format(i))
@@ -94,10 +94,10 @@ def train(args):
                 save_path = saver.save(sess, os.path.join(model_path, "latest_model.ckpt"))
                 with open('loss_history.pkl', "wb") as p:
                     pickle.dump([d_loss_his, g_loss_his], p)
-        if i%10 == 0:
-            save_path = saver.save(sess, os.path.join(model_path, "model_after_epoch_{}.ckpt".format(i)))
-        i += 1
-        if i > args.epochs:
+        if epoch%10 == 0:
+            save_path = saver.save(sess, os.path.join(model_path, "model_after_epoch_{}.ckpt".format(epoch)))
+        epoch += 1
+        if epoch > args.epochs:
             break
 
 def get_batch(index, batch_no, batch_size, loaded_data):
