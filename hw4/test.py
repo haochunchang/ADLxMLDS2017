@@ -3,12 +3,20 @@ import numpy as np
 import utils
 import model
 import scipy.misc
+import argparse
+from argument import add_arguments
 
-x_tags = utils.load_tag('./data/', preload=True)
+def parse():
+    parser = argparse.ArgumentParser(description="MLDS&ADL HW4")
+    parser = add_arguments(parser)
+    args = parser.parse_args()
+    return args
+
+x_tags = utils.load_tags('./data/', preload=True)
  
 # Define model
-gan = model.GAN(args)
-_, _, _, _, _ = gan.build_model()
+gan = model.GAN(parse())
+_, _, _, _, _, _ = gan.build_model()
     
 # Launch session
 config = tf.ConfigProto(device_count={'GPU':0}) 
