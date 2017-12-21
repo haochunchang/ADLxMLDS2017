@@ -53,7 +53,7 @@ def train(args):
     epoch = 1
     # Start Training Algorithm
     while True:
-        print('Starting Epoch: {}'.format(i))
+        print('Starting Epoch: {}'.format(epoch))
         batch_no = 0
         np.random.shuffle(index)
         while batch_no*args.bz < size:
@@ -88,7 +88,7 @@ def train(args):
             batch_no += 1
             if (batch_no % args.save_every) == 0:
                 print("Last {} average loss of D: {}, G:{}".format(30, np.mean(d_loss_his[-30:]), np.mean(g_loss_his[-30:])))
-                print("d_loss:{}, g_loss:{}, steps:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, i))
+                print("d_loss:{}, g_loss:{}, steps:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, epoch))
                 print("Saving Images, Model")
                 save_for_vis(output_path, real_images, gen)
                 save_path = saver.save(sess, os.path.join(model_path, "latest_model.ckpt"))
