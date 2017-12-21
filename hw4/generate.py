@@ -21,7 +21,7 @@ def main():
 
 	args = parser.parse_args()
         
-    txt_dim = 17599 
+    txt_dim = 2400 
 	model_options = {
 		'z_dim' : 100,
 		't_dim' : 256,
@@ -47,7 +47,7 @@ def main():
 	for cn, caption_vector in enumerate(caption_vectors):
 
 		caption_images = []
-		z_noise = np.random.uniform(-1, 1, [args.n_images, args.z_dim])
+		z_noise = np.random.normal([args.n_images, args.z_dim])
 		caption = [ caption_vector[0:args.caption_vector_length] ] * args.n_images
 		
 		[ gen_image ] = sess.run( [ outputs['generator'] ], 
@@ -58,7 +58,7 @@ def main():
 		
 		caption_images = [gen_image[i,:,:,:] for i in range(0, args.n_images)]
 		caption_image_dic[ cn ] = caption_images
-		print "Generated", cn
+		print("Generated: {}".format(cn))
 
 	for f in os.listdir( join(args.data_dir, 'val_samples')):
 		if os.path.isfile(f):
