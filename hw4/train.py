@@ -1,4 +1,4 @@
-import argparse, random, shutil, os
+import argparse, random, shutil, os, pickle
 from os.path import join
 import scipy.misc
 import tensorflow as tf
