@@ -50,8 +50,10 @@ def train(args):
     index = np.arange(size)
     d_loss_his = []
     g_loss_his = []
+    i = 1
     # Start Training Algorithm
-    for i in range(args.epochs):
+    while True:
+        print('Starting Epoch: {}'.format(i))
         batch_no = 0
         np.random.shuffle(index)
         while batch_no*args.bz < size:
@@ -86,12 +88,17 @@ def train(args):
             batch_no += 1
             if (batch_no % args.save_every) == 0:
                 print("Last {} average loss of D: {}, G:{}".format(30, np.mean(d_loss_his[-30:]), np.mean(g_loss_his[-30:])))
-                print("d_loss:{}, g_loss:{}, batch:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, i))
+                print("d_loss:{}, g_loss:{}, steps:{}, epochs:{}\n".format(d_loss, g_loss, batch_no, i))
                 print("Saving Images, Model")
                 save_for_vis(output_path, real_images, gen)
-                save_path = saver.save(sess, os.path.join(model_path, "latest_model.ckpt")) 
+                save_path = saver.save(sess, os.path.join(model_path, "latest_model.ckpt"))
+                with open('loss_history.pkl', "wb") as p:
+                    pickle.dump([d_loss_his, g_loss_his], p)
         if i%10 == 0:
             save_path = saver.save(sess, os.path.join(model_path, "model_after_epoch_{}.ckpt".format(i)))
+        i += 1
+        if i > args.epochs:
+            break
 
 def get_batch(index, batch_no, batch_size, loaded_data):
 
