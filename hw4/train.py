@@ -64,7 +64,7 @@ def train(args):
             for i in range(num_update_d):
                 # update discriminator
                 check_ts = [ checks['d_loss1'] , checks['d_loss2'], checks['d_loss3']]
-                _, d_loss, gen, d1, d2, d3 = sess.run([optims['d_optim'], loss['d_loss'], outputs['generator']] + check_ts,
+                _, d_loss, gen, d1, d2, d3, _ = sess.run([optims['d_optim'], loss['d_loss'], outputs['generator'], optims['d_clip']] + check_ts,
                     feed_dict = {
                         input_tensors['t_real_image'] : real_images,
                         input_tensors['t_wrong_image'] : wrong_images,

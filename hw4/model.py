@@ -57,11 +57,11 @@ class GAN():
         d_loss2 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_wrong_image_logits, labels=tf.zeros_like(disc_wrong_image)))
         d_loss3 = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_fake_image_logits, labels=tf.zeros_like(disc_fake_image)))
         '''
-        g_loss = tf.reduce_mean(disc_fake_image)
+        g_loss = -tf.reduce_mean(disc_fake_image)
     
-        d_loss1 = tf.reduce_mean(disc_real_image)
-        d_loss2 = -tf.reduce_mean(disc_wrong_image)
-        d_loss3 = -tf.reduce_mean(disc_fake_image)
+        d_loss1 = -tf.reduce_mean(disc_real_image)
+        d_loss2 = tf.reduce_mean(disc_wrong_image)
+        d_loss3 = tf.reduce_mean(disc_fake_image)
  
         
         d_loss = d_loss1 + d_loss2 + d_loss3
@@ -78,9 +78,9 @@ class GAN():
             g_optim = tf.train.RMSPropOptimizer(self.lr).minimize(g_loss, var_list=g_vars) 
         
         optims = {
-            #'d_optim': d_optim,
+            'd_optim': d_optim,
             'g_optim': g_optim,
-            'd_optim': [v.assign(tf.clip_by_value(v, -0.01, 0.01)) for v in d_vars]
+            'd_clip': [v.assign(tf.clip_by_value(v, -0.01, 0.01)) for v in d_vars]
         }
 
         input_tensors = {
