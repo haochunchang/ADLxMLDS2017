@@ -32,14 +32,14 @@ def load_tags(path, preload=False):
         for t in tags:
             tag = ''
             for i in range(len(t)-1):
-                tag += t[i] + ', '
+                tag += t[i] + ' '
             tag += t[-1]
             new_tags.append(tag)
 
         onehot_matrix = skip_encode(new_tags)
         print(onehot_matrix)
-        print("Converting one hot encoding...One-hot matrix shape:{}".format(onehot_matrix.shape))
-        np.save('tag_onehot_matrix', onehot_matrix)
+        print("Encoded tag matrix shape:{}".format(onehot_matrix.shape))
+        np.save('tag_matrix', onehot_matrix)
     else:
         onehot_matrix = np.load('tag_onehot_matrix.npy')
         print("Loading one hot encoding matrix...shape:{}".format(onehot_matrix.shape))
