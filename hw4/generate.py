@@ -2,14 +2,13 @@ import tensorflow as tf
 import numpy as np
 import argparse, random, os
 from os.path import join
-import h5py
 from skimage.io import imsave
 from skimage.transform import resize
 
-import model
+import model, utils
 from argument import add_arguments
 
-def main():
+def parse():
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--model_path', type=str, default='./models/latest_model.ckpt',
@@ -17,10 +16,13 @@ def main():
 
     parser.add_argument('--n_images', type=int, default=5, help='Number of Images per Caption')
 
-    parser.add_argument('--captions', type=str, default='sample_caption_vectors.hdf5',
+    parser.add_argument('--captions', type=str, default='./data/sample_testing_text.txt',
                        help='Caption Thought Vector File')
     parser = add_arguments(parser)
     args = parser.parse_args()
+    return args
+
+def main(args):
     
     random.seed(9487)
     np.random.seed(9487)
@@ -44,8 +46,12 @@ def main():
     
     input_tensors, outputs = gan.build_generator()
 
-    h = h5py.File( args.captions )
-    caption_vectors = np.array(h['vectors'])
+    captions = []
+    with open(args.captions, 'r') as f:
+        for line in f:
+            captions.append(line.split(',')[-1].strip())
+
+    caption_vectors = utils.skip_encode(captions)
     caption_image_dic = {}
     for cn, caption_vector in enumerate(caption_vectors):
 
@@ -61,7 +67,7 @@ def main():
         
         caption_images = [gen_image[i,:,:,:] for i in range(0, args.n_images)]
         caption_image_dic[ cn ] = caption_images
-        print("Generated: {}".format(cn))
+        #print("Generated: {}".format(cn))
     
     output_path = './samples'
     if not os.path.exists(output_path):
@@ -72,12 +78,14 @@ def main():
             if os.path.isfile(file_path):
                 os.unlink(file_path)
 
+    #print(caption_vectors.shape)
     for cn in range(0, len(caption_vectors)):
         caption_images = []
         for i, im in enumerate( caption_image_dic[ cn ] ):
-            im_name = "sample_{}_{}.jpg".format(cn, i)
+            im_name = "sample_{}_{}.jpg".format(cn, i+1)
             im = resize(im, (64,64))
             imsave(join(output_path, im_name), im)
 
 if __name__ == '__main__':
-    main()
+    args = parse()
+    main(args)
