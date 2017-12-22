@@ -17,8 +17,6 @@ def parse():
     return args
     
 def train(args):
-    random.seed(9487)
-    np.random.seed(9487)
     # Load data
     x_tags = utils.load_tags(args.data_dir, preload=bool(args.preload))
     x_imgs = utils.load_data(args.data_dir, preload=bool(args.preload))
@@ -26,7 +24,7 @@ def train(args):
   
     size = x_imgs.shape[0]
     num_update_d = 5
-    num_update_g = 2
+    num_update_g = 1
     config = tf.ConfigProto(device_count={'GPU':1})
     output_path = './outputs'
     model_path = './models/'
@@ -58,10 +56,10 @@ def train(args):
         np.random.shuffle(index)
         while batch_no*args.bz < size:
             real_images, wrong_images, caption_vectors, z_noise = get_batch(index, batch_no, args.bz, loaded_data)
-            #if batch_no < 25 or batch_no % 500 == 0:
-            #    num_update_d = 25
-            #else:
-            #    num_update_d = 5
+            if batch_no < 25 or batch_no % 500 == 0:
+                num_update_d = 25
+            else:
+                num_update_d = 5
 
             for i in range(num_update_d):
                 # update discriminator
