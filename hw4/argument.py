@@ -4,7 +4,7 @@ def add_arguments(parser):
     parser.add_argument('-epochs', type=int, default=600, help='total learing epochs')
     parser.add_argument('--data_dir', type=str, default='./data', help='data directory')
     parser.add_argument('--beta1', type=float, default=0.5, help='Momentum for Adam Update')
-    parser.add_argument('--save_every', type=int, default=30, help='Save Model/Samples every x iterations over batches')
+    parser.add_argument('--save_every', type=int, default=200, help='Save Model/Samples every x iterations over batches')
     parser.add_argument('--resume_model', type=str, default=None, help='Pre-Trained Model Path, to resume from')
     parser.add_argument('--preload', type=int, default=1, help='Pre-Loaded Data')
  
