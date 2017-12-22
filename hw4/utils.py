@@ -41,8 +41,8 @@ def load_tags(path, preload=False):
         print("Encoded tag matrix shape:{}".format(onehot_matrix.shape))
         np.save('tag_matrix', onehot_matrix)
     else:
-        onehot_matrix = np.load('tag_onehot_matrix.npy')
-        print("Loading one hot encoding matrix...shape:{}".format(onehot_matrix.shape))
+        onehot_matrix = np.load('tag_matrix.npy')
+        print("Loading tag encoded matrix...shape:{}".format(onehot_matrix.shape))
     return onehot_matrix
 
 def skip_encode(tags):
