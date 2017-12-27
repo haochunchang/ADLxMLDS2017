@@ -5,8 +5,8 @@ import numpy as np
 from skimage import io
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from skip_thoughts import configuration
-from skip_thoughts import encoder_manager
+#from skip_thoughts import configuration
+#from skip_thoughts import encoder_manager
 
 def load_data(path, preload=False):
     if not preload:
@@ -26,8 +26,9 @@ def load_data(path, preload=False):
 def load_data64(path, clean_lst, preload=False):
     if not preload:
         img_path = os.path.join(path, 'faces')
-        img_all_path = sorted(glob.glob(os.path.join(img_path, '*.jpg')), 
-                                key=lambda x: int(x.split('/')[-1].split('.')[0]))
+        img_all_path = pd.Series(sorted(glob.glob(os.path.join(img_path, '*.jpg')), 
+                                key=lambda x: int(x.split('/')[-1].split('.')[0])))
+        img_all_path.index = img_all_path.apply(lambda x: int(x.split('.')[0]))
         img_all_path = img_all_path[clean_lst]
         imgcol = io.ImageCollection(img_all_path, load_func=lambda x: io.imread(x).resize((64,64)) / 255.0)
         imgs = imgcol.concatenate()
@@ -74,17 +75,7 @@ def load_one_hot_tags(path, preload=False):
         tags = pd.read_csv(os.path.join(path, 'tags_clean.csv'), header=None, index_col=0)
         tags['tags'] = tags.iloc[:,0].str.split('\t')
         tags['tags'] = [[i.split(':')[0] for i in tag_list] for tag_list in tags['tags']]
-        tags = tags['tags']
-           
-        # Train tokenizer
-        tok = Tokenizer(num_words=1000)
-        tags_lst = []
-        for t in tags.values.tolist():
-            tags_lst += t
-        tok.fit_on_texts(tags_lst)
-        with open("tok.pkl","wb") as l:
-            pickle.dump(tok, l)
-        
+                  
         clean_id = []
         new_tags = []
         for ind, tt in tags.iterrows():
@@ -100,6 +91,12 @@ def load_one_hot_tags(path, preload=False):
             new_tags.append(tag)
             clean_id.append(ind)
         
+        # Train tokenizer
+        tok = Tokenizer(num_words=300)
+        tok.fit_on_texts(new_tags)
+        with open("tok.pkl","wb") as l:
+            pickle.dump(tok, l)
+ 
         onehot_matrix = tok.texts_to_matrix(new_tags, mode='binary')
         print(onehot_matrix)
         print("Converting one hot encoding...One-hot matrix shape:{}".format(onehot_matrix.shape))
