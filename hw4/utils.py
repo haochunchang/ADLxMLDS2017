@@ -41,18 +41,23 @@ def load_tags_clean(path, preload=False):
         tags = pd.read_csv(os.path.join(path, 'tags_clean.csv'), header=None, index_col=0)
         tags['tags'] = tags.iloc[:,0].str.split('\t')
         tags['tags'] = [[i.split(':')[0].strip() for i in tag_list if i != ''] for tag_list in tags['tags']]
-        tags['tags'] = tags['tags'][tags['tags'].isin(['hair', 'eyes'])]
-        clean_id = list(tags.index)
-        tags = [i for i in tags['tags']]
-        
+        #tags = tags['tags']
+
+        clean_id = []
         new_tags = []
-        for t in tags:
+        for ind, tt in tags.iterrows():
+            t = list(tt['tags'])
             tag = ''
             for i in range(len(t)-1):
-                tag += t[i] + ' '
-            tag += t[-1]
+                if 'hair' in t[i] or 'eye' in t[i]:
+                    tag += t[i] + ' '
+                    tag += t[-1]
+                else:
+                    continue;
+            if tag == '': continue
             new_tags.append(tag)
-
+            clean_id.append(ind)
+        #print(clean_id, len(clean_id))
         onehot_matrix = skip_encode(new_tags)
         print(onehot_matrix)
         print("Encoded tag matrix shape:{}".format(onehot_matrix.shape))
@@ -112,5 +117,5 @@ if __name__ == "__main__":
         new_tags.append(new_tag)
     skip_encode(new_tags)
     '''
-    load_tags('./data', preload=False)
+    load_tags_clean('./data', preload=False)
     #load_data('./data', preload=False)
