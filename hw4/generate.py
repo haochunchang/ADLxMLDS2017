@@ -24,8 +24,8 @@ def parse():
 
 def main(args):
     
-    random.seed(9487)
-    np.random.seed(9487)
+    random.seed(1)
+    np.random.seed(1)
     txt_dim = 2400 
     model_options = {
         'z_dim' : 100,

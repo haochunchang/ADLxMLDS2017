@@ -21,6 +21,47 @@ def load_data(path, preload=False):
         print("Loading true img matrix...shape:{}".format(imgs.shape))
     return imgs
 
+def load_data64(path, clean_lst, preload=False):
+    if not preload:
+        img_path = os.path.join(path, 'faces')
+        img_all_path = sorted(glob.glob(os.path.join(img_path, '*.jpg')), 
+                                key=lambda x: int(x.split('/')[-1].split('.')[0]))
+        img_all_path = img_all_path[clean_lst]
+        imgcol = io.ImageCollection(img_all_path, load_func=lambda x: io.imread(x).resize((64,64)) / 255.0)
+        imgs = imgcol.concatenate()
+        print("Image matrix shape:{}".format(imgs.shape))
+        np.save('img64_matrix', imgs)
+    else:
+        imgs = np.load('img64_matrix.npy')
+        print("Loading true img matrix...shape:{}".format(imgs.shape))
+    return imgs
+
+def load_tags_clean(path, preload=False):
+    if not preload:
+        tags = pd.read_csv(os.path.join(path, 'tags_clean.csv'), header=None, index_col=0)
+        tags['tags'] = tags.iloc[:,0].str.split('\t')
+        tags['tags'] = [[i.split(':')[0].strip() for i in tag_list if i != ''] for tag_list in tags['tags']]
+        tags['tags'] = tags['tags'][tags['tags'].isin(['hair', 'eyes'])]
+        clean_id = list(tags.index)
+        tags = [i for i in tags['tags']]
+        
+        new_tags = []
+        for t in tags:
+            tag = ''
+            for i in range(len(t)-1):
+                tag += t[i] + ' '
+            tag += t[-1]
+            new_tags.append(tag)
+
+        onehot_matrix = skip_encode(new_tags)
+        print(onehot_matrix)
+        print("Encoded tag matrix shape:{}".format(onehot_matrix.shape))
+        np.save('tag_clean_matrix', onehot_matrix)
+    else:
+        onehot_matrix = np.load('tag_clean_matrix.npy')
+        print("Loading tag encoded matrix...shape:{}".format(onehot_matrix.shape))
+    return onehot_matrix, clean_id
+
 def load_tags(path, preload=False):
     if not preload:
         tags = pd.read_csv(os.path.join(path, 'tags_clean.csv'), header=None, index_col=0)
