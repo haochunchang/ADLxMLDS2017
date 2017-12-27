@@ -3,6 +3,7 @@ import os, pickle, glob
 import pandas as pd
 import numpy as np
 from skimage import io
+from skimage.transform import resize
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 #from skip_thoughts import configuration
@@ -27,11 +28,16 @@ def load_data64(path, clean_lst, preload=False):
     if not preload:
         img_path = os.path.join(path, 'faces')
         img_all_path = pd.Series(sorted(glob.glob(os.path.join(img_path, '*.jpg')), 
-                                key=lambda x: int(x.split('/')[-1].split('.')[0])))
-        img_all_path.index = img_all_path.apply(lambda x: int(x.split('.')[0]))
+                                key=lambda x: int(x.split('/')[-1].split('.')[0]))) 
         img_all_path = img_all_path[clean_lst]
-        imgcol = io.ImageCollection(img_all_path, load_func=lambda x: io.imread(x).resize((64,64)) / 255.0)
+
+        imgcol = io.ImageCollection(img_all_path.values.tolist(), load_func=lambda x: io.imread(x))
         imgs = imgcol.concatenate()
+        new_imgs = []
+        for g in imgs:
+            img = resize(g,(64,64)) / 255.0
+            new_imgs.append(img)
+        imgs = np.array(new_imgs)
         print("Image matrix shape:{}".format(imgs.shape))
         np.save('img64_matrix', imgs)
     else:
@@ -156,5 +162,5 @@ if __name__ == "__main__":
         new_tags.append(new_tag)
     skip_encode(new_tags)
     '''
-    load_tags_clean('./data', preload=False)
-    #load_data('./data', preload=False)
+    #load_tags_clean('./data', preload=False)
+    load_data64('./data', [1,2,3], preload=False)
