@@ -22,7 +22,7 @@ class GAN():
             'z_dim' : self.z_size,
             'batch_size' : self.bz,
             'image_size' : self.img_size,
-            't_dim' : 256,
+            't_dim' : 512,
             'gf_dim' : 64,
             'df_dim' : 64,
             'gfc_dim' : 1024
@@ -198,7 +198,7 @@ class GAN():
         reduced_text_embeddings = ops.lrelu(ops.linear(t_text_embedding, self.options['t_dim'], 'd_embedding'))
         reduced_text_embeddings = tf.expand_dims(reduced_text_embeddings,1)
         reduced_text_embeddings = tf.expand_dims(reduced_text_embeddings,2)
-        tiled_embeddings = tf.tile(reduced_text_embeddings, [1,6,6,1], name='tiled_embeddings')
+        tiled_embeddings = tf.tile(reduced_text_embeddings, [1,4,4,1], name='tiled_embeddings')
         
         h3_concat = tf.concat([h3, tiled_embeddings], axis=3, name='h3_concat')
         h3_new = ops.lrelu( self.d_bn4(ops.conv2d(h3_concat, self.options['df_dim']*8, 1,1,1,1, name = 'd_h3_conv_new'))) #4
