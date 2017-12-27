@@ -18,7 +18,7 @@ def parse():
     
 def train(args):
     # Load data
-    x_tags, clean_id = utils.load_tags_clean(args.data_dir, preload=bool(args.preload))
+    x_tags, clean_id = utils.load_one_hot_tags(args.data_dir, preload=bool(args.preload))
     x_imgs = utils.load_data64(args.data_dir, clean_id,  preload=bool(args.preload))
     loaded_data = {'tags': x_tags, 'images': x_imgs}
   

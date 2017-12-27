@@ -3,6 +3,8 @@ import os, pickle, glob
 import pandas as pd
 import numpy as np
 from skimage import io
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
 from skip_thoughts import configuration
 from skip_thoughts import encoder_manager
 
@@ -65,6 +67,46 @@ def load_tags_clean(path, preload=False):
     else:
         onehot_matrix = np.load('tag_clean_matrix.npy')
         print("Loading tag encoded matrix...shape:{}".format(onehot_matrix.shape))
+    return onehot_matrix, clean_id
+
+def load_one_hot_tags(path, preload=False):
+    if not preload:
+        tags = pd.read_csv(os.path.join(path, 'tags_clean.csv'), header=None, index_col=0)
+        tags['tags'] = tags.iloc[:,0].str.split('\t')
+        tags['tags'] = [[i.split(':')[0] for i in tag_list] for tag_list in tags['tags']]
+        tags = tags['tags']
+           
+        # Train tokenizer
+        tok = Tokenizer(num_words=1000)
+        tags_lst = []
+        for t in tags.values.tolist():
+            tags_lst += t
+        tok.fit_on_texts(tags_lst)
+        with open("tok.pkl","wb") as l:
+            pickle.dump(tok, l)
+        
+        clean_id = []
+        new_tags = []
+        for ind, tt in tags.iterrows():
+            t = list(tt['tags'])
+            tag = ''
+            for i in range(len(t)-1):
+                if 'hair' in t[i] or 'eye' in t[i]:
+                    tag += t[i] + ' '
+                    tag += t[-1]
+                else:
+                    continue;
+            if tag == '': continue
+            new_tags.append(tag)
+            clean_id.append(ind)
+        
+        onehot_matrix = tok.texts_to_matrix(new_tags, mode='binary')
+        print(onehot_matrix)
+        print("Converting one hot encoding...One-hot matrix shape:{}".format(onehot_matrix.shape))
+        np.save('tag_onehot_matrix', onehot_matrix)
+    else:
+        onehot_matrix = np.load('tag_onehot_matrix.npy')
+        print("Loading one hot encoding matrix...shape:{}".format(onehot_matrix.shape))
     return onehot_matrix, clean_id
 
 def load_tags(path, preload=False):
