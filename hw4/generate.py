@@ -4,6 +4,7 @@ import argparse, random, os
 from os.path import join
 from skimage.io import imsave
 from skimage.transform import resize
+import h5py
 
 import model, utils
 from argument import add_arguments
@@ -24,8 +25,6 @@ def parse():
 
 def main(args):
     
-    random.seed(1)
-    np.random.seed(1)
     txt_dim = 2400 
     model_options = {
         'z_dim' : 100,
@@ -46,12 +45,19 @@ def main(args):
     
     input_tensors, outputs = gan.build_generator()
 
+    h = h5py.File('./tag_mapping.hdf5')
     captions = []
     with open(args.captions, 'r') as f:
         for line in f:
             captions.append(line.split(',')[-1].strip())
 
-    caption_vectors = utils.skip_encode(captions)
+    caption_vectors = []
+    for c in captions:
+        caption_vectors.append(h.get(c))
+
+    caption_vectors = np.array(caption_vectors)
+    caption_vectors = np.reshape(caption_vectors, (caption_vectors.shape[0], txt_dim))
+    print(caption_vectors.shape)
     caption_image_dic = {}
     for cn, caption_vector in enumerate(caption_vectors):
 
