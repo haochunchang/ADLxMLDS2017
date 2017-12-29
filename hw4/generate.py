@@ -57,12 +57,15 @@ def main(args):
 
     caption_vectors = np.array(caption_vectors)
     caption_vectors = np.reshape(caption_vectors, (caption_vectors.shape[0], txt_dim))
-    print(caption_vectors.shape)
     caption_image_dic = {}
     for cn, caption_vector in enumerate(caption_vectors):
 
         caption_images = []
-        z_noise = np.random.normal(size=[args.n_images, model_options['z_dim']])
+        z_noise = []
+        for i in range(args.n_images):
+            np.random.seed(i*9487)
+            z_noise.append(np.random.normal(size=[1, model_options['z_dim']]))
+        z_noise = np.array(z_noise).reshape((args.n_images, model_options['z_dim']))
         caption = [ caption_vector[0:model_options['caption_vector_length']] ] * args.n_images
         
         [ gen_image ] = sess.run( [ outputs['generator'] ], 
