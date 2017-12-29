@@ -53,7 +53,10 @@ def main(args):
 
     caption_vectors = []
     for c in captions:
-        caption_vectors.append(h.get(c))
+        if h.get(c) != None:
+            caption_vectors.append(h.get(c))
+        else:
+            caption_vectors.append(h.get(captions[0]))
 
     caption_vectors = np.array(caption_vectors)
     caption_vectors = np.reshape(caption_vectors, (caption_vectors.shape[0], txt_dim))
